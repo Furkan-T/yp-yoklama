@@ -4,6 +4,8 @@ Yurt/pansiyon talebeleri için **mobil öncelikli Progressive Web App**. Etüt v
 
 React 19, TypeScript ve Cloud Firestore ile yazılmıştır. Arayüz tamamen Türkçedir.
 
+**Canlı:** https://yoklama-takip-mauve.vercel.app
+
 ## Özellikler
 
 - **Yoklama takibi** — İki seans türü (etüt, namaz), dört durum: geldi, geç, devamsız, izinli
