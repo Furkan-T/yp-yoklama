@@ -1,0 +1,32 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Yetkili yönetici hesapları.
+    // Uygulamada kayıt (signup) ekranı yoktur; hesaplar Firebase konsolundan
+    // elle açılır. Yeni yönetici eklendiğinde UID'si bu listeye eklenmeli ve
+    // kurallar yeniden yayınlanmalıdır:
+    //   firebase deploy --only firestore:rules
+    function isAdmin() {
+      return request.auth != null && request.auth.uid in [
+        'WymrOaLDtaUpdWvBCaZnCEIVnK42'
+      ];
+    }
+
+    // Talebe kayıtları: TC No, veli telefonu gibi hassas veriler içerir.
+    match /students/{studentId} {
+      allow read, write: if isAdmin();
+    }
+
+    // Yoklama kayıtları
+    match /attendance/{recordId} {
+      allow read, write: if isAdmin();
+    }
+
+    // Tanımlanmamış her koleksiyon varsayılan olarak tamamen kapalı.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
