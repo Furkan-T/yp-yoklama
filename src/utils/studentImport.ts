@@ -17,9 +17,23 @@ export interface ImportResult {
 
 type Target = keyof Student | 'supervisor';
 
-/** Başlıkları harf dışındaki her şeyden arındırıp küçük harfe çevirir. */
+/** Türkçe harfleri ASCII karşılığına indirger. */
+const deaccent = (value: string): string =>
+  String(value).toLocaleLowerCase('tr')
+    .replace(/ı/g, 'i').replace(/ğ/g, 'g').replace(/ü/g, 'u')
+    .replace(/ş/g, 's').replace(/ö/g, 'o').replace(/ç/g, 'c');
+
+/** Başlıkları harf ve rakam dışındaki her şeyden arındırır. */
 const normalizeHeader = (header: string): string =>
-  String(header).toLocaleLowerCase('tr').replace(/[^a-zçğıöşü0-9]/g, '');
+  deaccent(header).replace(/[^a-z0-9]/g, '');
+
+/**
+ * Hücre değerlerini karşılaştırmak için sadeleştirir: + ve - işaretlerini
+ * korur — "0 Rh+" ile "0 Rh-" aksi halde aynı değere düşer ve kan grubu
+ * yanlış eşleşirdi.
+ */
+const normalizeValue = (value: string): string =>
+  deaccent(value).replace(/[^a-z0-9+-]/g, '');
 
 /**
  * Sütun başlığı eşlemeleri. Kullanıcılar başlıkları birebir yazmak zorunda
@@ -43,28 +57,101 @@ alias('bloodType', 'Kan Grubu', 'Kan');
 alias('grade', 'Sınıf', 'Sinif', 'Sınıfı');
 alias('country', 'Ülke', 'Ulke');
 
-/** "Grup Mesulü 1" gibi numaralı başlıkları da tanır. */
+/** Uzun takma adlar önce denensin ki "Veli Adı" yanlışlıkla "Ad"a düşmesin. */
+const HEADER_KEYS_BY_LENGTH = Object.keys(HEADER_ALIASES).sort((a, b) => b.length - a.length);
+
+/**
+ * Başlıktaki yıl gibi ekleri ("2026 Grup") ve sondaki sıra numarasını
+ * ("Grup Mesulü 1") yok sayarak sütunu tanır.
+ * @param header - ham sütun başlığı
+ * @returns eşleşen alan, tanınmadıysa null
+ */
 const resolveHeader = (header: string): Target | null => {
   const normalized = normalizeHeader(header);
+  if (!normalized) return null;
   if (HEADER_ALIASES[normalized]) return HEADER_ALIASES[normalized];
-  const withoutIndex = normalized.replace(/\d+$/, '');
-  return HEADER_ALIASES[withoutIndex] ?? null;
+
+  // Rakamları at: "2026 Grup" -> "grup", "Grup Mesulü 1" -> "grupmesulu"
+  const withoutDigits = normalized.replace(/\d+/g, '');
+  if (HEADER_ALIASES[withoutDigits]) return HEADER_ALIASES[withoutDigits];
+
+  // Son çare: başlığın içinde geçen en uzun takma adı kullan
+  const contained = HEADER_KEYS_BY_LENGTH.find(key => key.length >= 3 && withoutDigits.includes(key));
+  return contained ? HEADER_ALIASES[contained] : null;
 };
 
 /**
- * Hücre değerlerini karşılaştırmak için sadeleştirir: Türkçe harfleri ASCII
- * karşılığına indirger ama + ve - işaretlerini korur — "0 Rh+" ile "0 Rh-"
- * aksi halde aynı değere düşer ve kan grubu yanlış eşleşirdi.
+ * Grupların elle yazılırken sık kullanılan kısaltmaları. Grubun kendi adı
+ * ayrıca eklenir, bu yüzden burada yalnızca kısaltmalar listelenir.
  */
-const normalizeValue = (value: string): string =>
-  String(value).toLocaleLowerCase('tr')
-    .replace(/ı/g, 'i').replace(/ğ/g, 'g').replace(/ü/g, 'u')
-    .replace(/ş/g, 's').replace(/ö/g, 'o').replace(/ç/g, 'c')
-    .replace(/[^a-z0-9+-]/g, '');
+const GROUP_ABBREVIATIONS: Record<string, string[]> = {
+  'Hazırlık': ['hazirlk', 'hzrlk', 'hzrl', 'hazir', 'haz'],
+  'İbtidai': ['ibtida', 'ibtdi', 'ibtd', 'ibt'],
+  'İzhari': ['izhar', 'izhri', 'izhr', 'izh'],
+  'Tekamülaltı': ['tekamul', 'tkmlalti', 'tkmlalt', 'tkml', 'tka'],
+  'Kur\'an-ı Kerim': ['kurankerim', 'kkerim', 'kkerm', 'kkrm', 'kuran', 'kkk', 'kk'],
+};
+
+/**
+ * Kanonik grup adı -> kabul edilen yazımlar. Liste DERS_GROUPS'tan türetilir,
+ * böylece yeni bir grup eklendiğinde en azından kendi adıyla eşleşir.
+ */
+const GROUP_ALIASES: Record<string, string[]> = Object.fromEntries(
+  DERS_GROUPS.map(group => [
+    group,
+    [normalizeHeader(group), ...(GROUP_ABBREVIATIONS[group] ?? [])],
+  ])
+);
+
+/**
+ * Grup hücresinde anlam taşımayan kelimeler. "2026 Grup Hazırlık" gibi
+ * yazımlarda bunlar atıldıktan sonra geriye grup adı kalır.
+ */
+const GROUP_STOP_WORDS = new Set([
+  'grup', 'grubu', 'gurup', 'grb', 'grp',
+  'sinif', 'sinifi', 'sube', 'subesi',
+  'dahili', 'ders', 'dersi', 'dersleri',
+  'yil', 'yili', 'donem', 'donemi', 'egitim', 'ogretim', 'sene', 'senesi',
+]);
+
+/**
+ * Grup değerini kanonik ada oturtur. Yıl ve "grup" gibi ekler atılır,
+ * ardından kısaltmalara bakılır: "2026 K.Kerim" -> "Kur'an-ı Kerim".
+ * @param value - hücredeki ham değer
+ * @returns eşleşen grup adı, tanınmadıysa değerin kendisi
+ */
+const matchGroup = (value: string): string => {
+  const raw = deaccent(value);
+  if (!raw.trim()) return '';
+
+  // Anlamlı parçaları ayıkla: rakamlar ve genel kelimeler düşer
+  const core = raw
+    .split(/[^a-z0-9]+/)
+    .filter(token => token && !/^\d+$/.test(token) && !GROUP_STOP_WORDS.has(token))
+    .join('');
+
+  if (!core) return value.trim();
+
+  for (const [canonical, aliases] of Object.entries(GROUP_ALIASES)) {
+    if (aliases.includes(core)) return canonical;
+  }
+
+  // Yine de eşleşmezse, içinde geçen en uzun kısaltmayı ara
+  let best: { canonical: string; length: number } | null = null;
+  for (const [canonical, aliases] of Object.entries(GROUP_ALIASES)) {
+    for (const a of aliases) {
+      if (a.length >= 3 && core.includes(a) && (!best || a.length > best.length)) {
+        best = { canonical, length: a.length };
+      }
+    }
+  }
+
+  return best ? best.canonical : value.trim();
+};
 
 /**
  * Serbest yazılmış bir değeri geçerli seçeneklerden birine oturtur.
- * "izhari" -> "İzhari", "0rh-" -> "0 Rh-" gibi.
+ * "0rh-" -> "0 Rh-" gibi.
  */
 const matchOption = (value: string, options: string[]): string => {
   const normalized = normalizeValue(value);
@@ -124,7 +211,7 @@ export const parseStudentFile = async (
           student.supervisors = [...(student.supervisors || []), value];
         }
       } else if (target === 'group') {
-        student.group = matchOption(value, DERS_GROUPS);
+        student.group = matchGroup(value);
       } else if (target === 'bloodType') {
         student.bloodType = matchOption(value, BLOOD_TYPES);
       } else {
@@ -172,6 +259,22 @@ export const downloadTemplate = async (): Promise<void> => {
 
   const book = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(book, sheet, 'Talebeler');
+
+  // İkinci sayfa: seçenekli alanlarda hangi değerlerin kabul edildiği
+  const reference = XLSX.utils.aoa_to_sheet([
+    ['DAHİLİ DERS GRUPLARI', 'Kabul edilen kısaltmalar'],
+    ...DERS_GROUPS.map(group => [group, (GROUP_ABBREVIATIONS[group] ?? []).join(', ')]),
+    [],
+    ['KAN GRUPLARI'],
+    ...BLOOD_TYPES.map(type => [type]),
+    [],
+    ['NOT'],
+    ['Grup hücresinde yıl veya "grup" gibi ekler kullanılabilir: "2026 Grup Hazırlık" kabul edilir.'],
+    ['Yurt dışı telefon numaralarını ülke koduyla ve + ile yazın: +998 90 123 45 67'],
+  ]);
+  reference['!cols'] = [{ wch: 24 }, { wch: 48 }];
+  XLSX.utils.book_append_sheet(book, reference, 'Değerler');
+
   XLSX.writeFile(book, 'Talebe_Sablonu.xlsx');
 };
 

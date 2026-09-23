@@ -11,7 +11,7 @@ React 19, TypeScript ve Cloud Firestore ile yazılmıştır. Arayüz tamamen Tü
 - **Yoklama takibi** — İki seans türü (dahili ders, namaz), dört durum: geldi, geç, devamsız, izinli
 - **Akıllı filtreleme** — Dahili ders yoklamasında talebeler atandıkları gruba göre listelenir
 - **Talebe yönetimi** — Yurt içi ve yurt dışı telefon desteği, mükerrer ad-soyad kontrolü, grup mesulü ataması
-- **Excel'den toplu ekleme** — Şablon indirme, esnek sütun eşleme, satır bazlı doğrulama ve önizleme
+- **Excel'den toplu ekleme** — Şablon indirme, esnek sütun ve değer eşleme (kısaltmalar, yıl ekleri), satır bazlı doğrulama ve önizleme
 - **Geçmiş** — Kayıtları tarih ve seansa göre filtreleme, tekil veya toplu silme
 - **Geri alınabilir silme** — Kayıtlar yok edilmez, arşivlenir ve bildirimdeki "Geri Al" ile kurtarılabilir
 - **CSV dışa aktarma** — Excel uyumlu, özet istatistikli rapor
@@ -66,6 +66,7 @@ flowchart TB
 | **Tüm dinleyiciler `App.tsx`'te, sayfalarda değil** | Beş ekran aynı iki koleksiyonu okur. Sayfa başına abonelik, aynı veriyi tekrar tekrar okumak ve ekranların birbirinden farklı durum göstermesi demektir. Tek abonelik kümesiyle her ekran aynı anlık görüntüden render edilir. |
 | **Yoklama kaydı için tek `writeBatch`** | Talebe başına okuma + yazma yapmak 30 kişilik bir seansta 60 tur demek olurdu ve yarısı başarısız olabilirdi. Tek sorgu mevcut kayıtları yükler, tek batch tüm değişiklikleri yazar: 2 tur ve ya hepsi ya hiçbiri. |
 | **`deleteDoc` yerine yumuşak silme** | Silmeler toplu yapılır; "tümünü sil" yanlışlıkla bir günün tamamını yok edebilir. Yazmalar `isDeleted` bayrağı koyar, dinleyiciler bunları eler — görünüş aynı, ama geri alınabilir. |
+| **Grup değerleri esnek eşleştirilir** | Listeler farklı ellerden geliyor: aynı grup "K.Kerim", "kkrm" ya da "2026 Grup Hazırlık" diye yazılabiliyor. İçe aktarmada yıl ve "grup" gibi ekler ayıklanıp kısaltmalara bakılır. Tanınmayan değer sessizce bir gruba atanmaz, satır hatayla işaretlenir. |
 | **Telefonda ülke kalıbı zorlanmaz** | Talebelerin bir kısmı yurt dışından geldiği için numaralar tek bir kalıba sığmıyor. Türk cep numaraları tanınıp "5XX XXX XX XX" olarak düzenlenir; diğerleri girildiği gibi saklanır ve yalnızca hane sayısı (7–15) kontrol edilir. Eskiden kalıba uymayan numara sessizce boşaltılıyordu. |
 | **Kayıtlarda `updatedAt`** | `date` alanı gün başına sabitlenir (12:00), yani aynı günün seansları aynı damgayı taşır. Ana ekrandaki "günün son yoklaması" ancak kaydın yazılma anıyla doğru bulunabilir. |
 | **Güvenlik kurallarında UID beyaz listesi** | Firebase web anahtarı istemci paketiyle birlikte dağıtıldığı için, `request.auth != null` yeterli olsaydı hesap açan herkes talebelerin TC ve veli telefon bilgilerine erişebilirdi. Erişim, açıkça listelenen yönetici UID'leriyle sınırlıdır. |

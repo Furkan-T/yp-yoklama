@@ -1,7 +1,7 @@
 import type { AttendanceType, AttendanceStatus } from './types';
 
 // Uygulama künyesi
-export const APP_VERSION = 'v1.1';
+export const APP_VERSION = 'v1.2';
 export const APP_NAME = 'Yoklama Takip Sistemi';
 
 // Doğrulama desenleri
@@ -27,6 +27,7 @@ export const DERS_GROUPS = [
   'İbtidai',
   'İzhari',
   'Tekamülaltı',
+  'Kur\'an-ı Kerim',
 ];
 
 export const NAMAZ_TIMES = [
