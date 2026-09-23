@@ -2,20 +2,37 @@ import type { Timestamp } from 'firebase/firestore';
 
 export interface Student {
   id: string;
+  /** Ad ve soyad ayrı tutulur; `name` bu ikisinden türetilir. */
+  firstName?: string;
+  lastName?: string;
+  /**
+   * "Ad Soyad". Firestore sorgusu buna göre sıralandığı ve yoklama kayıtları
+   * talebe adını kopyalayarak sakladığı için ayrıca yazılır.
+   */
   name: string;
-  school?: string;
-  grade?: string;
-  schoolNumber?: string;
-  tcNo?: string;
+  /** Dahili ders grubu — DERS_GROUPS içindeki bir değer. */
+  group?: string;
+  /** Grup mesulleri; en fazla iki kişi. */
+  supervisors?: string[];
+  phone?: string;
   parentName?: string;
   parentPhone?: string;
+  faculty?: string;
+  department?: string;
+  bloodType?: string;
+  grade?: string;
+  country?: string;
   createdAt?: Timestamp;
   isActive?: boolean;
-  etut?: string; // ETUT_SESSIONS içindeki bir değer; boşsa tüm etütlerde görünür
   isDeleted?: boolean;
   deletedAt?: Timestamp | null;
 }
 
+/**
+ * Yoklama türü. 'ETUT' anahtarı arayüzde "DAHİLİ DERS" olarak gösterilir;
+ * daha önce kaydedilmiş yoklamalar bu değerle yazıldığı için anahtarın
+ * kendisi değiştirilmez (bkz. TYPE_LABELS).
+ */
 export type AttendanceType = 'ETUT' | 'NAMAZ';
 
 export type AttendanceStatus = 'VAR' | 'GEC' | 'YOK' | 'IZINLI';

@@ -1,12 +1,12 @@
 import React from 'react';
-import type { AttendanceStatus } from '../types';
-import { STATUS_META } from '../constants';
+import type { AttendanceStatus, AttendanceType } from '../types';
+import { STATUS_META, TYPE_LABELS } from '../constants';
 
 interface DashboardProps {
   stats: {
     totalStudents: number;
     activeStudentCount: number;
-    latestSessionInfo: { type: string; subType: string } | null;
+    latestSessionInfo: { type: AttendanceType; subType: string } | null;
     latestAbsentees: { name: string; status: AttendanceStatus }[];
   };
   studentLoading: boolean;
@@ -44,7 +44,7 @@ const Dashboard: React.FC<DashboardProps> = ({ stats, studentLoading }) => {
           <div>
             <div className="flex items-center gap-2 mb-4">
               <span className="bg-primary-500/10 text-primary-300 px-3 py-1.5 rounded-lg text-xs font-bold border border-primary-500/20">
-                {stats.latestSessionInfo.type} — {stats.latestSessionInfo.subType}
+                {TYPE_LABELS[stats.latestSessionInfo.type]} — {stats.latestSessionInfo.subType}
               </span>
             </div>
 

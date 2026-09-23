@@ -2,9 +2,11 @@ import React, { useState, useMemo } from 'react';
 import { db } from '../firebase';
 import { collection, addDoc, updateDoc, doc, serverTimestamp } from "firebase/firestore";
 import type { Student, ShowToastFn } from '../types';
-import { validateTCNo, validateAndFormatPhone, sanitizeInput, getWhatsAppURL } from '../utils/validation';
+import { getWhatsAppURL } from '../utils/validation';
+import { toStudentDocument, validateStudent, fullName } from '../utils/student';
 import { useConfirm } from '../hooks/useConfirm';
 import StudentFormModal from '../components/StudentFormModal';
+import StudentImportModal from '../components/StudentImportModal';
 
 interface StudentsProps {
   students: Student[];
@@ -15,6 +17,7 @@ interface StudentsProps {
 const Students: React.FC<StudentsProps> = ({ students, loading, showToast }) => {
   const [draft, setDraft] = useState<Partial<Student> | null>(null);
   const [mode, setMode] = useState<'add' | 'edit'>('add');
+  const [showImport, setShowImport] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -24,65 +27,36 @@ const Students: React.FC<StudentsProps> = ({ students, loading, showToast }) => 
     const term = searchTerm.trim().toLocaleLowerCase('tr');
     if (!term) return students;
     return students.filter(student =>
-      student.name.toLocaleLowerCase('tr').includes(term) ||
-      student.school?.toLocaleLowerCase('tr').includes(term) ||
-      student.parentName?.toLocaleLowerCase('tr').includes(term)
+      [student.name, student.group, student.faculty, student.department, student.parentName, student.country]
+        .some(field => field?.toLocaleLowerCase('tr').includes(term))
     );
   }, [students, searchTerm]);
 
   const closeModal = () => { setDraft(null); setErrors({}); };
 
-  const openAdd = () => { setMode('add'); setDraft({ isActive: true }); setErrors({}); };
+  const openAdd = () => { setMode('add'); setDraft({ isActive: true, supervisors: [] }); setErrors({}); };
   const openEdit = (student: Student) => { setMode('edit'); setDraft({ ...student }); setErrors({}); };
 
-  const openWhatsApp = (phone: string | undefined) => {
-    if (!phone) { showToast("Telefon numarası kayıtlı değil.", "error"); return; }
+  const openWhatsApp = (phone: string | undefined, who: string) => {
+    if (!phone) { showToast(`${who} telefon numarası kayıtlı değil.`, "error"); return; }
     const url = getWhatsAppURL(phone);
     if (!url) { showToast("Geçersiz telefon numarası.", "error"); return; }
     window.open(url, '_blank', 'noopener,noreferrer');
   };
 
-  const validate = (student: Partial<Student>): boolean => {
-    const found: Record<string, string> = {};
-
-    if (!student.name?.trim()) found.name = "İsim gereklidir";
-    if (student.tcNo && !validateTCNo(student.tcNo)) found.tcNo = "Geçersiz TC Kimlik No";
-    if (student.parentPhone && !validateAndFormatPhone(student.parentPhone)) {
-      found.parentPhone = "Geçersiz numara (5XX XXX XX XX)";
-    }
-
-    const tcNo = student.tcNo?.replace(/\s/g, '');
-    if (tcNo && students.some(s => s.tcNo?.replace(/\s/g, '') === tcNo && s.id !== student.id)) {
-      found.tcNo = "Bu TC No başka bir talebede kayıtlı";
-    }
-
-    setErrors(found);
-    return Object.keys(found).length === 0;
-  };
-
-  /** Firestore'a yazılacak temiz alanlar. */
-  const toDocument = (student: Partial<Student>) => ({
-    name: sanitizeInput(student.name || ''),
-    school: sanitizeInput(student.school || ''),
-    grade: sanitizeInput(student.grade || ''),
-    schoolNumber: sanitizeInput(student.schoolNumber || ''),
-    tcNo: student.tcNo?.replace(/\s/g, '') || '',
-    parentName: sanitizeInput(student.parentName || ''),
-    parentPhone: validateAndFormatPhone(student.parentPhone || '') || '',
-    isActive: student.isActive !== false,
-    etut: student.etut || '',
-  });
-
   const handleSubmit = async () => {
-    if (!draft || !validate(draft)) return;
+    if (!draft) return;
+    const found = validateStudent(draft, students);
+    setErrors(found);
+    if (Object.keys(found).length > 0) return;
 
     setIsSubmitting(true);
     try {
       if (mode === 'edit' && draft.id) {
-        await updateDoc(doc(db, "students", draft.id), toDocument(draft));
+        await updateDoc(doc(db, "students", draft.id), toStudentDocument(draft));
         showToast("Bilgiler güncellendi!", "success");
       } else {
-        await addDoc(collection(db, "students"), { ...toDocument(draft), createdAt: serverTimestamp() });
+        await addDoc(collection(db, "students"), { ...toStudentDocument(draft), createdAt: serverTimestamp() });
         showToast("Talebe başarıyla eklendi!", "success");
       }
       closeModal();
@@ -119,21 +93,28 @@ const Students: React.FC<StudentsProps> = ({ students, loading, showToast }) => 
   return (
     <div className="space-y-4 animate-fade-in w-full px-4 pt-6">
       <div className="flex gap-2">
-        <div className="flex-1 bg-dark-900/60 p-3 rounded-2xl border border-primary-900/30 flex items-center gap-2">
+        <div className="flex-1 bg-dark-900/60 p-3 rounded-2xl border border-primary-900/30 flex items-center gap-2 min-w-0">
           <i className="fa-solid fa-magnifying-glass text-dark-400"></i>
           <input
             type="text"
-            placeholder="İsim, okul veya veli adı ara..."
+            placeholder="İsim, grup, fakülte ara..."
             aria-label="Talebe ara"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="bg-transparent w-full text-white outline-none placeholder-dark-500 font-bold"
+            className="bg-transparent w-full text-white outline-none placeholder-dark-500 font-bold min-w-0"
           />
         </div>
         <button
+          onClick={() => setShowImport(true)}
+          aria-label="Excel'den toplu talebe ekle"
+          className="w-14 h-14 rounded-2xl bg-dark-800 border border-primary-900/40 text-primary-300 flex items-center justify-center active:scale-95 transition-all flex-shrink-0"
+        >
+          <i className="fa-solid fa-file-excel text-lg"></i>
+        </button>
+        <button
           onClick={openAdd}
           aria-label="Yeni talebe ekle"
-          className="w-14 h-14 rounded-2xl bg-primary-500 text-white flex items-center justify-center shadow-lg shadow-primary-900/40 active:scale-95 transition-all"
+          className="w-14 h-14 rounded-2xl bg-primary-500 text-white flex items-center justify-center shadow-lg shadow-primary-900/40 active:scale-95 transition-all flex-shrink-0"
         >
           <i className="fa-solid fa-plus text-xl"></i>
         </button>
@@ -151,19 +132,21 @@ const Students: React.FC<StudentsProps> = ({ students, loading, showToast }) => 
               </div>
               <div className="min-w-0">
                 <div className="font-bold text-white flex items-center gap-2">
-                  <span className={`truncate ${student.isActive === false ? 'line-through text-dark-400' : ''}`}>{student.name}</span>
+                  <span className={`truncate ${student.isActive === false ? 'line-through text-dark-400' : ''}`}>
+                    {student.name || fullName(student)}
+                  </span>
                   {student.isActive === false && (
                     <span className="text-[9px] bg-rose-500/10 text-rose-400 px-2 py-0.5 rounded border border-rose-500/20 uppercase tracking-widest font-extrabold flex-shrink-0">Pasif</span>
                   )}
                 </div>
                 <div className="text-xs text-dark-400 flex items-center gap-2">
-                  <span className="truncate">{student.school || '—'}</span>
-                  {student.etut && <span className="text-accent-500 font-bold flex-shrink-0">{student.etut}</span>}
+                  <span className="truncate">{student.faculty || student.department || '—'}</span>
+                  {student.group && <span className="text-accent-500 font-bold flex-shrink-0">{student.group}</span>}
                 </div>
               </div>
             </div>
             <div className="flex gap-1.5 flex-shrink-0">
-              <button onClick={() => openWhatsApp(student.parentPhone)} aria-label={`${student.name} velisine WhatsApp'tan yaz`} className="w-9 h-9 flex items-center justify-center rounded-xl text-green-500 bg-green-500/10 hover:bg-green-500 hover:text-white transition-all border border-green-500/10"><i className="fa-brands fa-whatsapp text-lg"></i></button>
+              <button onClick={() => openWhatsApp(student.parentPhone, `${student.name} velisinin`)} aria-label={`${student.name} velisine WhatsApp'tan yaz`} className="w-9 h-9 flex items-center justify-center rounded-xl text-green-500 bg-green-500/10 hover:bg-green-500 hover:text-white transition-all border border-green-500/10"><i className="fa-brands fa-whatsapp text-lg"></i></button>
               <button onClick={() => openEdit(student)} aria-label={`${student.name} bilgilerini düzenle`} className="w-9 h-9 flex items-center justify-center rounded-xl text-accent-400 bg-accent-500/10 hover:bg-accent-500 hover:text-dark-950 transition-all border border-accent-500/10"><i className="fa-solid fa-pen"></i></button>
               <button onClick={() => handleDelete(student)} aria-label={`${student.name} kaydını sil`} className="w-9 h-9 flex items-center justify-center rounded-xl text-rose-400 bg-rose-500/10 hover:bg-rose-500 hover:text-white transition-all border border-rose-500/10"><i className="fa-solid fa-trash-can"></i></button>
             </div>
@@ -180,6 +163,14 @@ const Students: React.FC<StudentsProps> = ({ students, loading, showToast }) => 
           onChange={setDraft}
           onSubmit={handleSubmit}
           onCancel={closeModal}
+        />
+      )}
+
+      {showImport && (
+        <StudentImportModal
+          students={students}
+          showToast={showToast}
+          onClose={() => setShowImport(false)}
         />
       )}
 

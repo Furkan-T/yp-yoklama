@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { db } from '../firebase';
 import { updateDoc, doc, serverTimestamp, writeBatch } from 'firebase/firestore';
 import type { AttendanceRecord, AttendanceType, ShowToastFn } from '../types';
-import { ATTENDANCE_TYPES, SUB_TYPES, STATUS_META } from '../constants';
+import { ATTENDANCE_TYPES, SUB_TYPES, STATUS_META, TYPE_LABELS } from '../constants';
 import { getLocalDateISO, timestampToDateISO, normalizeSubType } from '../utils/validation';
 import { useConfirm } from '../hooks/useConfirm';
 
@@ -67,7 +67,7 @@ const Records: React.FC<RecordsProps> = ({ records, loading, showToast }) => {
 
     const subTypeText = historySubType === ALL ? 'tüm vakitler' : normalizeSubType(historySubType);
     const ok = await confirm({
-      message: `${historyDate} tarihindeki ${historyType} (${subTypeText}) için ${filteredRecords.length} kayıt silinecek. Emin misiniz?`,
+      message: `${historyDate} tarihindeki ${TYPE_LABELS[historyType]} (${subTypeText}) için ${filteredRecords.length} kayıt silinecek. Emin misiniz?`,
       confirmLabel: 'Tümünü Sil',
     });
     if (!ok) return;
@@ -108,7 +108,7 @@ const Records: React.FC<RecordsProps> = ({ records, loading, showToast }) => {
               onClick={() => handleTypeChange(type)}
               className={`flex-1 py-2 text-[11px] font-extrabold rounded-lg transition-all ${historyType === type ? 'bg-primary-500 text-white shadow-md' : 'text-dark-400 hover:text-dark-200'}`}
             >
-              {type}
+              {TYPE_LABELS[type]}
             </button>
           ))}
         </div>

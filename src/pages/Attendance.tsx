@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { db } from '../firebase';
 import { collection, doc, Timestamp, query, where, getDocs, writeBatch, serverTimestamp } from "firebase/firestore";
 import type { Student, AttendanceType, AttendanceStatus, AttendanceRecord, TabKey, ShowToastFn } from '../types';
-import { ATTENDANCE_TYPES, SUB_TYPES, STATUS_META } from '../constants';
+import { ATTENDANCE_TYPES, SUB_TYPES, STATUS_META, TYPE_LABELS } from '../constants';
 import { isFutureDate, getLocalDateISO, timestampToDateISO, normalizeSubType } from '../utils/validation';
 import { useConfirm } from '../hooks/useConfirm';
 
@@ -34,12 +34,12 @@ const AttendancePage: React.FC<AttendancePageProps> = ({ students, records, setA
   // ekrandaki seçimleri ezmemesi için tutulur.
   const touchedSessionRef = useRef<string | null>(null);
 
-  // ETÜT'te sadece o gruba atanmış talebeler listelenir; grubu olmayanlar
-  // (etut alanı boş) geriye dönük uyumluluk için tüm etütlerde görünür.
+  // Dahili derste sadece o gruba atanmış talebeler listelenir; grubu
+  // atanmamış olanlar (group boş) tüm gruplarda görünür.
   const filteredStudents = useMemo(() => {
     const activeStudents = students.filter(s => s.isActive !== false);
     if (selectedType !== 'ETUT') return activeStudents;
-    return activeStudents.filter(s => !s.etut || s.etut === selectedSubType);
+    return activeStudents.filter(s => !s.group || s.group === selectedSubType);
   }, [students, selectedType, selectedSubType]);
 
   // Seçilen tarih/tür/vakit için daha önce kaydedilmiş durumlar
@@ -178,7 +178,7 @@ const AttendancePage: React.FC<AttendancePageProps> = ({ students, records, setA
               onClick={() => handleTypeChange(type)}
               className={`flex-1 py-2.5 text-[11px] font-extrabold rounded-lg transition-all ${selectedType === type ? 'bg-primary-500 text-white shadow-md' : 'text-dark-400 hover:text-dark-200 bg-dark-800/50 hover:bg-dark-800'}`}
             >
-              {type}
+              {TYPE_LABELS[type]}
             </button>
           ))}
         </div>
@@ -203,7 +203,7 @@ const AttendancePage: React.FC<AttendancePageProps> = ({ students, records, setA
           <div key={student.id} className="bg-dark-900/60 p-3 rounded-xl border border-dark-800 flex items-center justify-between gap-3 w-full">
             <div className="flex-1 min-w-0">
               <span className="font-bold text-sm text-primary-50 block truncate">{student.name}</span>
-              <span className="text-[10px] text-dark-400 truncate">{student.grade || student.school || '—'}</span>
+              <span className="text-[10px] text-dark-400 truncate">{[student.faculty, student.grade].filter(Boolean).join(' · ') || '—'}</span>
             </div>
             <div className="flex items-center gap-1 flex-shrink-0" role="group" aria-label={`${student.name} durumu`}>
               {STATUS_BUTTONS.map(({ status, icon, active }) => (

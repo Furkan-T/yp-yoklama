@@ -1,17 +1,33 @@
 import type { AttendanceType, AttendanceStatus } from './types';
 
 // Uygulama künyesi
-export const APP_VERSION = 'v1.0';
+export const APP_VERSION = 'v1.1';
 export const APP_NAME = 'Yoklama Takip Sistemi';
 
 // Doğrulama desenleri
 export const VALIDATION_PATTERNS = {
-  TC_NO: /^\d{11}$/,
   PHONE: /^5\d{9}$/,
   EMAIL: /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 };
 
 export const ATTENDANCE_TYPES: AttendanceType[] = ['ETUT', 'NAMAZ'];
+
+/**
+ * Yoklama türlerinin ekranda görünen adları. 'ETUT' anahtarı veritabanında
+ * olduğu gibi kalır; yalnızca etiketi "DAHİLİ DERS" olarak değişmiştir.
+ */
+export const TYPE_LABELS: Record<AttendanceType, string> = {
+  ETUT: 'DAHİLİ DERS',
+  NAMAZ: 'NAMAZ',
+};
+
+/** Dahili ders grupları — hem talebe kaydında hem yoklama seansı olarak kullanılır. */
+export const DERS_GROUPS = [
+  'Hazırlık',
+  'İbtidai',
+  'İzhari',
+  'Tekamülaltı',
+];
 
 export const NAMAZ_TIMES = [
   'Sabah Namazı',
@@ -21,19 +37,21 @@ export const NAMAZ_TIMES = [
   'Yatsı Namazı'
 ];
 
-export const ETUT_SESSIONS = [
-  'Etüt 1',
-  'Etüt 2',
-  'Etüt 3',
-  'Etüt 4',
-  'Etüt 5',
-];
-
 /** Seçilen yoklama türünün alt seans listesi. */
 export const SUB_TYPES: Record<AttendanceType, string[]> = {
-  ETUT: ETUT_SESSIONS,
+  ETUT: DERS_GROUPS,
   NAMAZ: NAMAZ_TIMES,
 };
+
+export const BLOOD_TYPES = [
+  'A Rh+', 'A Rh-',
+  'B Rh+', 'B Rh-',
+  'AB Rh+', 'AB Rh-',
+  '0 Rh+', '0 Rh-',
+];
+
+/** Bir talebe kaydında en fazla kaç grup mesulü tutulabilir. */
+export const MAX_SUPERVISORS = 2;
 
 /** Durum rozetlerinin ortak etiket ve renkleri (tek kaynak). */
 export const STATUS_META: Record<AttendanceStatus, { short: string; label: string; badge: string; bar: string }> = {

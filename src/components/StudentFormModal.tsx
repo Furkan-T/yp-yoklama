@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import type { Student } from '../types';
-import { ETUT_SESSIONS } from '../constants';
+import { MAX_SUPERVISORS } from '../constants';
+import { STUDENT_FIELDS, SUPERVISOR_LABELS, type StudentFieldDef } from '../utils/student';
 
 interface StudentFormModalProps {
   mode: 'add' | 'edit';
@@ -15,6 +16,7 @@ interface StudentFormModalProps {
 /**
  * Talebe ekleme ve düzenleme aynı alanları kullandığı için tek bir kontrollü
  * form bileşeni üzerinden yürür; sadece başlık, buton metni ve vurgu rengi değişir.
+ * Alanların kendisi STUDENT_FIELDS listesinden üretilir.
  */
 const StudentFormModal: React.FC<StudentFormModalProps> = ({
   mode, value, errors, isSubmitting, onChange, onSubmit, onCancel,
@@ -32,19 +34,59 @@ const StudentFormModal: React.FC<StudentFormModalProps> = ({
     return () => window.removeEventListener('keydown', handleEscape);
   }, [onCancel]);
 
-  const field = (key: keyof Student, placeholder: string, type = 'text') => (
-    <div>
-      <input
-        type={type}
-        aria-label={placeholder}
-        placeholder={placeholder}
-        value={(value[key] as string) || ''}
-        onChange={e => onChange({ ...value, [key]: e.target.value })}
-        className={`w-full p-4 bg-dark-800 rounded-2xl border text-white placeholder-dark-400 outline-none focus:border-primary-500 ${errors[key] ? 'border-rose-500' : 'border-dark-700'}`}
-      />
-      {errors[key] && <p className="text-rose-400 text-xs mt-1 ml-2">{errors[key]}</p>}
-    </div>
-  );
+  const inputClass = (key: string) =>
+    `w-full p-4 bg-dark-800 rounded-2xl border text-white placeholder-dark-400 outline-none focus:border-primary-500 ${errors[key] ? 'border-rose-500' : 'border-dark-700'}`;
+
+  const setSupervisor = (index: number, name: string) => {
+    const next = [...(value.supervisors || [])];
+    next[index] = name;
+    onChange({ ...value, supervisors: next });
+  };
+
+  const renderField = (field: StudentFieldDef) => {
+    const key = field.key as string;
+    const current = (value[field.key] as string) || '';
+    const label = field.label + (field.required ? ' *' : '');
+
+    if (field.kind === 'select') {
+      return (
+        <div key={key}>
+          <select
+            aria-label={field.label}
+            value={current}
+            onChange={e => onChange({ ...value, [field.key]: e.target.value })}
+            className={`${inputClass(key)} ${current ? '' : 'text-dark-400'}`}
+          >
+            <option value="">{field.label}</option>
+            {field.options?.map(option => <option key={option} value={option}>{option}</option>)}
+          </select>
+          {errors[key] && <p className="text-rose-400 text-xs mt-1 ml-2">{errors[key]}</p>}
+        </div>
+      );
+    }
+
+    return (
+      <div key={key}>
+        <input
+          type={field.kind === 'tel' ? 'tel' : 'text'}
+          aria-label={field.label}
+          placeholder={label}
+          value={current}
+          onChange={e => onChange({ ...value, [field.key]: e.target.value })}
+          className={inputClass(key)}
+        />
+        {errors[key] && <p className="text-rose-400 text-xs mt-1 ml-2">{errors[key]}</p>}
+      </div>
+    );
+  };
+
+  // Yan yana konabilecek ardışık alanları ikişerli grupla
+  const groupedFields: StudentFieldDef[][] = [];
+  STUDENT_FIELDS.forEach(field => {
+    const last = groupedFields[groupedFields.length - 1];
+    if (field.half && last?.length === 1 && last[0].half) last.push(field);
+    else groupedFields.push([field]);
+  });
 
   return (
     <div className="absolute inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm" role="dialog" aria-modal="true">
@@ -52,44 +94,28 @@ const StudentFormModal: React.FC<StudentFormModalProps> = ({
         <h2 className={`text-xl font-bold mb-6 ${accent.text}`}>{isEdit ? 'Talebeyi Düzenle' : 'Yeni Talebe'}</h2>
 
         <div className="space-y-4 max-h-[60vh] overflow-y-auto custom-scrollbar pr-1">
-          {field('name', 'Adı Soyadı *')}
+          {groupedFields.map((group, i) => (
+            group.length === 2
+              ? <div key={i} className="grid grid-cols-2 gap-3">{group.map(renderField)}</div>
+              : renderField(group[0])
+          ))}
 
-          <div className="grid grid-cols-2 gap-3">
-            {field('tcNo', 'TC Kimlik No')}
-            {field('schoolNumber', 'Okul No')}
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            {field('grade', 'Sınıfı (Örn: 9/A)')}
-            {field('school', 'Okulu')}
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            {field('parentName', 'Veli Adı Soyadı')}
-            {field('parentPhone', 'Veli Tel (5XX)', 'tel')}
-          </div>
-
-          {/* ETÜT GRUBU */}
-          <div className="p-4 bg-dark-800 rounded-2xl border border-dark-700">
-            <div className="text-xs font-bold text-dark-300 mb-3 uppercase tracking-wider">Etüt Grubu</div>
-            <div className="grid grid-cols-5 gap-2">
-              {ETUT_SESSIONS.map(session => (
-                <button
-                  key={session}
-                  type="button"
-                  aria-pressed={value.etut === session}
-                  onClick={() => onChange({ ...value, etut: value.etut === session ? '' : session })}
-                  className={`py-2.5 rounded-xl text-xs font-extrabold transition-all border ${
-                    value.etut === session
-                      ? `${accent.chip} shadow-md`
-                      : `bg-dark-900 text-dark-300 border-dark-700 ${accent.hover}`
-                  }`}
-                >
-                  {session.replace('Etüt ', '')}
-                </button>
-              ))}
+          {/* GRUP MESULLERİ — en fazla iki kişi */}
+          <div className="p-4 bg-dark-800 rounded-2xl border border-dark-700 space-y-3">
+            <div className="text-xs font-bold text-dark-300 uppercase tracking-wider">
+              Grup Mesulü <span className="normal-case tracking-normal text-dark-400">(en fazla {MAX_SUPERVISORS})</span>
             </div>
-            {!value.etut && <p className="text-dark-400 text-xs mt-2">Seçilmezse tüm etütlerde görünür.</p>}
+            {SUPERVISOR_LABELS.map((label, index) => (
+              <input
+                key={label}
+                type="text"
+                aria-label={label}
+                placeholder={label}
+                value={value.supervisors?.[index] || ''}
+                onChange={e => setSupervisor(index, e.target.value)}
+                className="w-full p-3.5 bg-dark-900 rounded-xl border border-dark-700 text-white placeholder-dark-400 outline-none focus:border-primary-500"
+              />
+            ))}
           </div>
 
           {/* AKTİFLİK */}

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { getAuth, signOut } from "firebase/auth";
 import type { AttendanceRecord, AttendanceStatus, ShowToastFn } from '../types';
-import { APP_VERSION, APP_NAME, STATUS_META } from '../constants';
+import { APP_VERSION, APP_NAME, STATUS_META, TYPE_LABELS } from '../constants';
 import { normalizeSubType } from '../utils/validation';
 import { useConfirm } from '../hooks/useConfirm';
 
@@ -53,7 +53,7 @@ const Settings: React.FC<SettingsProps> = ({ userEmail, records, showToast }) =>
       lines.push([
         d.toLocaleDateString('tr-TR'),
         d.toLocaleDateString('tr-TR', { weekday: 'long' }),
-        record.type === 'ETUT' ? 'Etut' : 'Namaz',
+        TYPE_LABELS[record.type],
         normalizeSubType(record.subType),
         record.studentName,
         record.status,

@@ -8,9 +8,10 @@ React 19, TypeScript ve Cloud Firestore ile yazılmıştır. Arayüz tamamen Tü
 
 ## Özellikler
 
-- **Yoklama takibi** — İki seans türü (etüt, namaz), dört durum: geldi, geç, devamsız, izinli
-- **Akıllı filtreleme** — Etüt yoklamasında talebeler atandıkları etüt grubuna göre listelenir
-- **Talebe yönetimi** — TC Kimlik No checksum doğrulaması, telefon normalizasyonu, mükerrer TC kontrolü
+- **Yoklama takibi** — İki seans türü (dahili ders, namaz), dört durum: geldi, geç, devamsız, izinli
+- **Akıllı filtreleme** — Dahili ders yoklamasında talebeler atandıkları gruba göre listelenir
+- **Talebe yönetimi** — Telefon normalizasyonu, mükerrer ad-soyad kontrolü, grup mesulü ataması
+- **Excel'den toplu ekleme** — Şablon indirme, esnek sütun eşleme, satır bazlı doğrulama ve önizleme
 - **Geçmiş** — Kayıtları tarih ve seansa göre filtreleme, tekil veya toplu silme
 - **Geri alınabilir silme** — Kayıtlar yok edilmez, arşivlenir ve bildirimdeki "Geri Al" ile kurtarılabilir
 - **CSV dışa aktarma** — Excel uyumlu, özet istatistikli rapor
@@ -105,24 +106,31 @@ firebase deploy --only firestore:rules
 ## Veri modeli
 
 ```
-students/                     attendance/
-  name                          studentId
-  school, grade, schoolNumber   studentName
-  tcNo                          type      (ETUT | NAMAZ)
-  parentName, parentPhone       subType   (seans adı)
-  etut                          status    (VAR | GEC | YOK | IZINLI)
-  isActive                      date
-  isDeleted                     updatedAt
-                                isDeleted
+students/                          attendance/
+  firstName, lastName, name          studentId
+  group    (dahili ders grubu)       studentName
+  supervisors[]  (en fazla 2)        type      (ETUT | NAMAZ)
+  phone                              subType   (seans adı)
+  parentName, parentPhone            status    (VAR | GEC | YOK | IZINLI)
+  faculty, department, grade         date
+  bloodType, country                 updatedAt
+  isActive, isDeleted                isDeleted
 ```
+
+`name` alanı `firstName` + `lastName`'den türetilerek ayrıca yazılır: Firestore
+sorgusu buna göre sıralanır ve yoklama kayıtları talebe adını kopyalayarak saklar.
+
+Yoklama türü anahtarı `ETUT` olarak kalmıştır; arayüzde **DAHİLİ DERS** olarak
+gösterilir. Daha önce kaydedilmiş yoklamalar bu değerle yazıldığı için anahtar
+değiştirilmemiştir (bkz. `TYPE_LABELS`).
 
 ## Ekranlar
 
 | Ekran | Amaç |
 |-------|------|
 | Ana Ekran | Toplam ve aktif talebe sayısı; günün son seansında devamsız, geç veya izinli olanlar |
-| Yoklama | Tarih, tür ve seansa göre hızlı yoklama girişi |
-| Talebeler | Kayıt ekleme, düzenleme, arama; veliye tek dokunuşla WhatsApp |
+| Yoklama | Tarih, tür ve gruba göre hızlı yoklama girişi |
+| Talebeler | Kayıt ekleme, düzenleme, arama, Excel'den toplu ekleme; veliye tek dokunuşla WhatsApp |
 | Geçmiş | Geçmiş kayıtları tarih ve seansa göre görüntüleme ve silme |
 | Ayarlar | CSV dışa aktarma, hesap bilgisi, çıkış |
 

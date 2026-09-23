@@ -1,31 +1,6 @@
 // Uygulama genelinde kullanılan doğrulama ve biçimlendirme yardımcıları
 
 /**
- * TC Kimlik Numarasını checksum algoritmasıyla doğrular.
- * @param tcNo - 11 haneli TC kimlik numarası
- * @returns geçerliyse true
- */
-export const validateTCNo = (tcNo: string): boolean => {
-    const cleaned = tcNo.replace(/\s/g, '');
-
-    if (!/^\d{11}$/.test(cleaned)) return false;
-    if (cleaned[0] === '0') return false;
-
-    const digits = cleaned.split('').map(Number);
-
-    // 10. hane kontrolü
-    const sum10 = ((digits[0] + digits[2] + digits[4] + digits[6] + digits[8]) * 7 -
-        (digits[1] + digits[3] + digits[5] + digits[7])) % 10;
-    if (sum10 !== digits[9]) return false;
-
-    // 11. hane kontrolü
-    const sum11 = digits.slice(0, 10).reduce((a, b) => a + b, 0) % 10;
-    if (sum11 !== digits[10]) return false;
-
-    return true;
-};
-
-/**
  * Telefon numarasını doğrular ve "5XX XXX XX XX" biçimine getirir.
  * @param phone - çeşitli biçimlerde telefon numarası
  * @returns biçimlendirilmiş numara, geçersizse null
@@ -41,7 +16,7 @@ export const validateAndFormatPhone = (phone: string): string | null => {
  * @param phone - çeşitli biçimlerde telefon numarası
  * @returns 10 haneli numara, geçersizse null
  */
-const normalizePhone = (phone: string): string | null => {
+export const normalizePhone = (phone: string): string | null => {
     let cleaned = phone.replace(/\D/g, '');
 
     if (cleaned.startsWith('90')) cleaned = cleaned.substring(2);
