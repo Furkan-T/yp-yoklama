@@ -1,6 +1,6 @@
 import type { Student } from '../types';
 import { DERS_GROUPS, BLOOD_TYPES, MAX_SUPERVISORS } from '../constants';
-import { sanitizeInput, validateAndFormatPhone } from './validation';
+import { sanitizeInput, formatPhone, isPlausiblePhone } from './validation';
 
 export type StudentFieldKind = 'text' | 'tel' | 'select';
 
@@ -11,6 +11,8 @@ export interface StudentFieldDef {
   kind: StudentFieldKind;
   required?: boolean;
   options?: string[];
+  /** Alanın altında gösterilen küçük açıklama. */
+  hint?: string;
   /** Formda iki alanı yan yana dizmek için. */
   half?: boolean;
 }
@@ -23,7 +25,7 @@ export const STUDENT_FIELDS: StudentFieldDef[] = [
   { key: 'firstName', label: 'Adı', kind: 'text', required: true, half: true },
   { key: 'lastName', label: 'Soyadı', kind: 'text', required: true, half: true },
   { key: 'group', label: 'Dahili Ders Grubu', kind: 'select', options: DERS_GROUPS },
-  { key: 'phone', label: 'Talebe Cep No', kind: 'tel', half: true },
+  { key: 'phone', label: 'Talebe Cep No', kind: 'tel', half: true, hint: 'Yurt dışı için ülke kodunu + ile yazın' },
   { key: 'parentName', label: 'Veli Adı', kind: 'text', half: true },
   { key: 'parentPhone', label: 'Veli Cep No', kind: 'tel', half: true },
   { key: 'faculty', label: 'Fakülte', kind: 'text', half: true },
@@ -75,9 +77,9 @@ export const toStudentDocument = (student: Partial<Student>) => ({
   name: sanitizeInput(fullName(student)),
   group: student.group || '',
   supervisors: cleanSupervisors(student.supervisors),
-  phone: validateAndFormatPhone(student.phone || '') || '',
+  phone: formatPhone(student.phone || ''),
   parentName: sanitizeInput(student.parentName || ''),
-  parentPhone: validateAndFormatPhone(student.parentPhone || '') || '',
+  parentPhone: formatPhone(student.parentPhone || ''),
   faculty: sanitizeInput(student.faculty || ''),
   department: sanitizeInput(student.department || ''),
   bloodType: student.bloodType || '',
@@ -101,10 +103,11 @@ export const validateStudent = (
   if (!student.firstName?.trim()) errors.firstName = "Ad gereklidir";
   if (!student.lastName?.trim()) errors.lastName = "Soyad gereklidir";
 
+  // Yabancı talebeler için ülke kodu serbest; yalnızca hane sayısına bakılır.
   (['phone', 'parentPhone'] as const).forEach(key => {
     const value = student[key];
-    if (value && !validateAndFormatPhone(value)) {
-      errors[key] = "Geçersiz numara (5XX XXX XX XX)";
+    if (value && !isPlausiblePhone(value)) {
+      errors[key] = "Numara çok kısa veya çok uzun görünüyor";
     }
   });
 

@@ -75,7 +75,9 @@ const StudentFormModal: React.FC<StudentFormModalProps> = ({
           onChange={e => onChange({ ...value, [field.key]: e.target.value })}
           className={inputClass(key)}
         />
-        {errors[key] && <p className="text-rose-400 text-xs mt-1 ml-2">{errors[key]}</p>}
+        {errors[key]
+          ? <p className="text-rose-400 text-xs mt-1 ml-2">{errors[key]}</p>
+          : field.hint && <p className="text-dark-400 text-[10px] mt-1 ml-2 leading-snug">{field.hint}</p>}
       </div>
     );
   };

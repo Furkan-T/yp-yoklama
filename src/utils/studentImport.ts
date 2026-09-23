@@ -153,13 +153,21 @@ export const parseStudentFile = async (
 export const downloadTemplate = async (): Promise<void> => {
   const XLSX = await import('xlsx');
 
-  const example = [
-    'Ahmet', 'Yılmaz', DERS_GROUPS[0], 'Mehmet Hoca', '',
-    '532 111 22 33', 'Mustafa Yılmaz', '533 444 55 66',
-    'İlahiyat Fakültesi', 'İlahiyat', BLOOD_TYPES[0], '1', 'Türkiye',
+  // İki örnek satır: biri yurt içi, biri yurt dışı numara biçimi için
+  const examples = [
+    [
+      'Ahmet', 'Yılmaz', DERS_GROUPS[0], 'Mehmet Hoca', '',
+      '0532 111 22 33', 'Mustafa Yılmaz', '0533 444 55 66',
+      'İlahiyat Fakültesi', 'İlahiyat', BLOOD_TYPES[0], '1', 'Türkiye',
+    ],
+    [
+      'Bilol', 'Rahimov', DERS_GROUPS[1], 'Ali Hoca', '',
+      '+998 90 123 45 67', 'Aziz Rahimov', '+998 91 234 56 78',
+      'İlahiyat Fakültesi', 'İlahiyat', BLOOD_TYPES[2], '2', 'Özbekistan',
+    ],
   ];
 
-  const sheet = XLSX.utils.aoa_to_sheet([IMPORT_COLUMNS, example]);
+  const sheet = XLSX.utils.aoa_to_sheet([IMPORT_COLUMNS, ...examples]);
   sheet['!cols'] = IMPORT_COLUMNS.map(header => ({ wch: Math.max(header.length + 4, 14) }));
 
   const book = XLSX.utils.book_new();

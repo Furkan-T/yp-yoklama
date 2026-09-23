@@ -1,39 +1,76 @@
 // Uygulama genelinde kullanılan doğrulama ve biçimlendirme yardımcıları
 
 /**
- * Telefon numarasını doğrular ve "5XX XXX XX XX" biçimine getirir.
- * @param phone - çeşitli biçimlerde telefon numarası
- * @returns biçimlendirilmiş numara, geçersizse null
+ * Numarayı rakamlara indirger ve uluslararası önek taşıyıp taşımadığını bildirir.
  */
-export const validateAndFormatPhone = (phone: string): string | null => {
-    const normalized = normalizePhone(phone);
-    if (!normalized) return null;
-    return `${normalized.substring(0, 3)} ${normalized.substring(3, 6)} ${normalized.substring(6, 8)} ${normalized.substring(8, 10)}`;
+const splitPhone = (phone: string): { digits: string; isInternational: boolean } => {
+    const raw = phone.trim();
+    let digits = raw.replace(/\D/g, '');
+    const isInternational = raw.startsWith('+') || digits.startsWith('00');
+    if (digits.startsWith('00')) digits = digits.slice(2);
+    return { digits, isInternational };
 };
 
 /**
- * Telefon numarasını 10 haneli (5XXXXXXXXX) sade biçime indirger.
+ * Numara bir Türk cep numarasıysa 10 haneli (5XXXXXXXXX) biçimini verir.
+ * 90, 0 ve +90 önekleri kabul edilir.
  * @param phone - çeşitli biçimlerde telefon numarası
- * @returns 10 haneli numara, geçersizse null
+ * @returns 10 haneli numara, Türk cep numarası değilse null
  */
-export const normalizePhone = (phone: string): string | null => {
-    let cleaned = phone.replace(/\D/g, '');
-
-    if (cleaned.startsWith('90')) cleaned = cleaned.substring(2);
-    else if (cleaned.startsWith('0')) cleaned = cleaned.substring(1);
-
-    return /^5\d{9}$/.test(cleaned) ? cleaned : null;
+export const normalizeTurkishMobile = (phone: string): string | null => {
+    let { digits } = splitPhone(phone);
+    if (digits.startsWith('90')) digits = digits.slice(2);
+    else if (digits.startsWith('0')) digits = digits.slice(1);
+    return /^5\d{9}$/.test(digits) ? digits : null;
 };
 
 /**
- * Telefon numarası için WhatsApp bağlantısı üretir.
+ * Numarayı saklanacak biçime getirir. Türk cep numaraları "5XX XXX XX XX"
+ * olarak düzenlenir; yabancı numaralar korunur (uluslararası önek varsa "+" ile).
+ * Yurt dışından gelen talebeler için numara biçimi ülkeden ülkeye değiştiğinden
+ * zorlayıcı bir kalıp uygulanmaz.
+ * @param phone - serbest biçimde numara
+ * @returns saklanacak numara, girdi boşsa boş metin
+ */
+export const formatPhone = (phone: string): string => {
+    const { digits, isInternational } = splitPhone(phone);
+    if (!digits) return '';
+
+    const turkish = normalizeTurkishMobile(phone);
+    if (turkish) {
+        return `${turkish.substring(0, 3)} ${turkish.substring(3, 6)} ${turkish.substring(6, 8)} ${turkish.substring(8, 10)}`;
+    }
+
+    return isInternational ? `+${digits}` : digits;
+};
+
+/**
+ * Numaranın makul olup olmadığını söyler. Ülke biçimleri çok çeşitli olduğu için
+ * yalnızca hane sayısına bakılır; boş değer geçerlidir, telefon alanları zorunlu değildir.
+ * @param phone - serbest biçimde numara
+ * @returns kabul edilebilirse true
+ */
+export const isPlausiblePhone = (phone: string): boolean => {
+    if (!phone.trim()) return true;
+    const { digits } = splitPhone(phone);
+    return digits.length >= 7 && digits.length <= 15; // E.164 en fazla 15 hane
+};
+
+/**
+ * Telefon numarası için WhatsApp bağlantısı üretir. Türk cep numaralarına 90
+ * ülke kodu eklenir; yabancı numaralarda kullanıcının girdiği kod kullanılır.
  * @param phone - telefon numarası
- * @returns wa.me bağlantısı, numara geçersizse null
+ * @returns wa.me bağlantısı, numara kullanılamazsa null
  */
 export const getWhatsAppURL = (phone: string): string | null => {
-    const normalized = normalizePhone(phone);
-    return normalized ? `https://wa.me/90${normalized}` : null;
+    const turkish = normalizeTurkishMobile(phone);
+    if (turkish) return `https://wa.me/90${turkish}`;
+
+    // Yabancı numara: baştaki sıfırlar (şehir içi önek) atılır
+    const international = splitPhone(phone).digits.replace(/^0+/, '');
+    return international.length >= 7 ? `https://wa.me/${international}` : null;
 };
+
 
 /**
  * E-posta biçimini doğrular.
