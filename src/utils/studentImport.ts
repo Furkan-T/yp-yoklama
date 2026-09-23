@@ -17,9 +17,20 @@ export interface ImportResult {
 
 type Target = keyof Student | 'supervisor';
 
-/** Türkçe harfleri ASCII karşılığına indirger. */
+/**
+ * Türkçe harfleri ASCII karşılığına indirger.
+ *
+ * Önce Türkçe kurallarıyla küçük harfe çevrilir: "I" -> "ı", "İ" -> "i".
+ * Ardından NFD ile ayrıştırılıp birleşik aksan işaretleri atılır; bazı
+ * programlar "ü" harfini tek karakter yerine "u + ¨" olarak yazdığından
+ * bu adım olmadan o yazımlar tanınmaz.
+ * Son olarak ayrıştırması olmayan Türkçe harfler tek tek eşlenir ("ı" gibi).
+ */
 const deaccent = (value: string): string =>
-  String(value).toLocaleLowerCase('tr')
+  String(value)
+    .toLocaleLowerCase('tr')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
     .replace(/ı/g, 'i').replace(/ğ/g, 'g').replace(/ü/g, 'u')
     .replace(/ş/g, 's').replace(/ö/g, 'o').replace(/ç/g, 'c');
 
