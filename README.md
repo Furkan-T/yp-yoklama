@@ -92,9 +92,42 @@ npm run dev
 
 ## Başka bir bilgisayarda çalışmak
 
-Depoyu klonlamak yeterli değildir: Firebase anahtarlarını tutan `.env.local`
-dosyası depoya dahil edilmez (`.gitignore`), bu yüzden o makinede ayrıca
-oluşturulması gerekir.
+Depoyu klonlamak tek başına yeterli değildir. İki şey ayrıca gerekir:
+depo gizli olduğu için **GitHub erişimi**, ve Firebase anahtarlarını tutan
+`.env.local` dosyası depoya dahil edilmediği için (`.gitignore`) **o dosyanın
+yeniden oluşturulması**.
+
+### 1. Ön gereksinimler
+
+| Araç | Sürüm | Kontrol |
+|---|---|---|
+| Node.js | 20.19+ veya 22.12+ (LTS önerilir) | `node -v` |
+| npm | Node ile birlikte gelir | `npm -v` |
+| Git | Herhangi bir güncel sürüm | `git --version` |
+
+Node kurulu değilse [nodejs.org](https://nodejs.org) adresinden LTS sürümünü
+kurun. macOS'ta `brew install node` da olur. Git macOS'ta Xcode Command Line
+Tools ile gelir (`xcode-select --install`), Windows'ta
+[git-scm.com](https://git-scm.com) üzerinden kurulur.
+
+### 2. GitHub erişimi
+
+Depo gizli, bu yüzden klonlarken kimlik doğrulaması istenir. En kolay yol
+GitHub CLI:
+
+```bash
+gh auth login
+```
+
+Tarayıcıda oturum açmanızı ister, sonrasında `git` komutları kendiliğinden
+yetkilenir. GitHub CLI yoksa `brew install gh` (macOS) veya
+[cli.github.com](https://cli.github.com) üzerinden kurulur.
+
+Alternatif olarak GitHub'da **Settings → Developer settings → Personal access
+tokens** bölümünden `repo` yetkili bir token üretip, klonlama sırasında şifre
+yerine o token'ı girebilirsiniz. (GitHub hesap şifresi kabul edilmez.)
+
+### 3. Klonlama ve bağımlılıklar
 
 ```bash
 git clone https://github.com/Furkan-T/yp-yoklama.git
@@ -102,22 +135,79 @@ cd yp-yoklama
 npm install
 ```
 
-Ardından `.env.local` dosyasını oluşturun. En kolayı Vercel'den çekmektir:
+`npm install` birkaç dakika sürebilir; `node_modules` klasörü de depoya dahil
+değildir, her makinede yeniden kurulur.
+
+### 4. Firebase anahtarları (`.env.local`)
+
+Bu adım atlanırsa uygulama açılışta "Firebase yapılandırması eksik" hatası verir.
+
+**Yol A — Vercel'den çekin (önerilir).** Anahtarlar zaten Vercel'de tanımlı:
 
 ```bash
+npx vercel login
 npx vercel link
 npx vercel env pull .env.local
 ```
 
-Vercel kullanmak istemiyorsanız `.env.example` dosyasını `.env.local` olarak
-kopyalayıp değerleri Firebase konsolundaki proje ayarlarından girin. Sonra:
+`vercel link` hangi hesap ve projeyle eşleşeceğini sorar; listeden
+`yoklama-takip` projesini seçin. `env pull` altı `VITE_FIREBASE_*` değişkenini
+`.env.local` dosyasına yazar.
+
+**Yol B — elle girin.** Vercel kullanmak istemiyorsanız `.env.example` dosyasını
+`.env.local` olarak kopyalayın ve değerleri Firebase konsolundan
+(**Proje ayarları → Genel → Uygulamalarınız → Web**) alın:
+
+```bash
+cp .env.example .env.local
+```
+
+`.env.local` dosyasını e-posta veya mesajla göndermeyin; anahtarlar gizli
+sayılmasa da düz metin olarak dolaştırmamak doğru alışkanlıktır.
+
+### 5. Çalıştırma
 
 ```bash
 npm run dev
 ```
 
-Değişiklikleri `git push` ile gönderdiğinizde Vercel otomatik derleyip yayına
-alır; ayrıca bir dağıtım komutu çalıştırmak gerekmez.
+Terminalde yazan adresi (genelde `http://localhost:5173`) tarayıcıda açın.
+Giriş bilgileriniz aynıdır — kimlik doğrulama Firebase tarafında olduğu için
+makineye bağlı değildir.
+
+### 6. Günlük akış
+
+```bash
+git pull        # çalışmaya başlamadan önce
+# ... değişiklikleri yapın ...
+npm run lint    # isteğe bağlı, hata kontrolü
+git add -A && git commit -m "mesaj"
+git push        # Vercel otomatik derleyip yayına alır
+```
+
+Ayrıca bir dağıtım komutu çalıştırmak gerekmez.
+
+> İki bilgisayarda aynı anda çalışıyorsanız her oturuma `git pull` ile başlayın;
+> aksi halde `git push` çakışır.
+
+### İsteğe bağlı araçlar
+
+Bunlar yalnızca ilgili işi yapacaksanız gerekir:
+
+| Araç | Ne için |
+|---|---|
+| `firebase-tools` | `firestore.rules` değiştirip yayınlamak (`firebase deploy --only firestore:rules`) |
+| `vercel` | Anahtarları çekmek veya elle dağıtım yapmak |
+
+### Sorun giderme
+
+| Belirti | Sebep ve çözüm |
+|---|---|
+| `Firebase yapılandırması eksik: ...` | `.env.local` yok veya boş. 4. adımı uygulayın. Dosyayı değiştirdikten sonra dev sunucusunu yeniden başlatın. |
+| `Repository not found` | Gizli depoya erişim yok. `gh auth login` çalıştırın veya token kullanın. |
+| `Unsupported engine` / Vite açılmıyor | Node sürümü eski. `node -v` ile kontrol edin, 20.19+ veya 22.12+ olmalı. |
+| `Port 5173 is in use` | Başka bir sunucu çalışıyor. Onu kapatın ya da `npm run dev -- --port 5174`. |
+| Giriş oluyor ama liste boş, "yüklenemedi" uyarısı | Kullanıcının UID'si `firestore.rules` içindeki listede değil. |
 
 ## Komutlar
 
