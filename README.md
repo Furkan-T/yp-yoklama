@@ -90,6 +90,35 @@ Ardından geliştirme sunucusunu başlatın:
 npm run dev
 ```
 
+## Başka bir bilgisayarda çalışmak
+
+Depoyu klonlamak yeterli değildir: Firebase anahtarlarını tutan `.env.local`
+dosyası depoya dahil edilmez (`.gitignore`), bu yüzden o makinede ayrıca
+oluşturulması gerekir.
+
+```bash
+git clone https://github.com/Furkan-T/yp-yoklama.git
+cd yp-yoklama
+npm install
+```
+
+Ardından `.env.local` dosyasını oluşturun. En kolayı Vercel'den çekmektir:
+
+```bash
+npx vercel link
+npx vercel env pull .env.local
+```
+
+Vercel kullanmak istemiyorsanız `.env.example` dosyasını `.env.local` olarak
+kopyalayıp değerleri Firebase konsolundaki proje ayarlarından girin. Sonra:
+
+```bash
+npm run dev
+```
+
+Değişiklikleri `git push` ile gönderdiğinizde Vercel otomatik derleyip yayına
+alır; ayrıca bir dağıtım komutu çalıştırmak gerekmez.
+
 ## Komutlar
 
 ```bash

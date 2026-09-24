@@ -1,7 +1,7 @@
 import type { AttendanceType, AttendanceStatus } from './types';
 
 // Uygulama künyesi
-export const APP_VERSION = 'v1.3';
+export const APP_VERSION = 'v1.4';
 export const APP_NAME = 'Yoklama Takip Sistemi';
 
 // Doğrulama desenleri
@@ -25,7 +25,7 @@ export const TYPE_LABELS: Record<AttendanceType, string> = {
 export const DERS_GROUPS = [
   'Hazırlık',
   'İbtidai',
-  'İzhari',
+  'İhzari',
   'Tekamülaltı',
   'Kur\'an-ı Kerim',
 ];

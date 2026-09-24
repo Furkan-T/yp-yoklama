@@ -98,8 +98,8 @@ const resolveHeader = (header: string): Target | null => {
 const GROUP_ABBREVIATIONS: Record<string, string[]> = {
   'Hazırlık': ['hazirlk', 'hzrlk', 'hzrl', 'hazir', 'haz'],
   'İbtidai': ['ibtida', 'ibtdi', 'ibtd', 'ibt'],
-  // "İhzari" yazımı da sahada kullanılıyor; aynı gruba eşlenir.
-  'İzhari': ['izhar', 'izhri', 'izhr', 'izh', 'ihzari', 'ihzar', 'ihzri', 'ihzr', 'ihz'],
+  // Eski kayıtlarda ve bazı listelerde "İzhari" yazımı geçiyor; aynı gruba eşlenir.
+  'İhzari': ['ihzar', 'ihzri', 'ihzr', 'ihz', 'izhari', 'izhar', 'izhri', 'izhr', 'izh'],
   'Tekamülaltı': ['tekamul', 'tkmlalti', 'tkmlalt', 'tkml', 'tka'],
   'Kur\'an-ı Kerim': ['kurankerim', 'kkerim', 'kkerm', 'kkrm', 'kuran', 'kkk', 'kk'],
 };
