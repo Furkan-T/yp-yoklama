@@ -121,39 +121,51 @@ const StudentImportModal: React.FC<StudentImportModalProps> = ({ students, showT
 
           {stats && (
             <>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-3 gap-2">
                 <div className="p-3 rounded-xl bg-primary-50 border border-primary-200 text-center">
                   <div className="text-2xl font-extrabold text-primary-700">{stats.valid}</div>
-                  <div className="text-[10px] font-bold uppercase tracking-wider text-muted">Eklenecek</div>
+                  <div className="text-[9px] font-bold uppercase tracking-wider text-muted">Eklenecek</div>
                 </div>
                 <div className={`p-3 rounded-xl border text-center ${stats.invalid > 0 ? 'bg-rose-50 border-rose-200' : 'bg-surface-soft border-line'}`}>
-                  <div className={`text-2xl font-extrabold ${stats.invalid > 0 ? 'text-rose-300' : 'text-muted'}`}>{stats.invalid}</div>
-                  <div className="text-[10px] font-bold uppercase tracking-wider text-muted">Hatalı</div>
+                  <div className={`text-2xl font-extrabold ${stats.invalid > 0 ? 'text-rose-600' : 'text-muted'}`}>{stats.invalid}</div>
+                  <div className="text-[9px] font-bold uppercase tracking-wider text-muted">Hatalı</div>
+                </div>
+                <div className={`p-3 rounded-xl border text-center ${stats.skipped > 0 ? 'bg-accent-50 border-accent-200' : 'bg-surface-soft border-line'}`}>
+                  <div className={`text-2xl font-extrabold ${stats.skipped > 0 ? 'text-accent-800' : 'text-muted'}`}>{stats.skipped}</div>
+                  <div className="text-[9px] font-bold uppercase tracking-wider text-muted">Ayrılmış</div>
                 </div>
               </div>
 
               <ul className="space-y-1.5">
                 {rows?.map(row => {
                   const messages = Object.values(row.errors);
-                  const ok = messages.length === 0;
+                  const skipped = !!row.skipReason;
+                  const ok = !skipped && messages.length === 0;
+                  const tone = skipped
+                    ? { box: 'bg-accent-50 border-accent-200', name: 'text-accent-800', icon: 'fa-user-minus text-accent-700' }
+                    : ok
+                      ? { box: 'bg-surface-soft border-line', name: 'text-ink', icon: 'fa-check text-primary-600' }
+                      : { box: 'bg-rose-50 border-rose-200', name: 'text-rose-600', icon: 'fa-xmark text-rose-600' };
                   return (
-                    <li key={row.rowNumber} className={`p-2.5 rounded-xl border text-xs flex items-start gap-2 ${ok ? 'bg-surface-soft border-line' : 'bg-rose-500/5 border-rose-200'}`}>
+                    <li key={row.rowNumber} className={`p-2.5 rounded-xl border text-xs flex items-start gap-2 ${tone.box}`}>
                       <span className="text-muted font-mono flex-shrink-0">{row.rowNumber}</span>
                       <div className="min-w-0 flex-1">
-                        <div className={`font-bold truncate ${ok ? 'text-ink' : 'text-rose-300'}`}>
+                        <div className={`font-bold truncate ${tone.name}`}>
                           {fullName(row.student) || '(isimsiz satır)'}
                         </div>
-                        {!ok && <div className="text-rose-600 mt-0.5">{messages.join(' · ')}</div>}
+                        {skipped && <div className="text-accent-800 mt-0.5">{row.skipReason} — eklenmeyecek</div>}
+                        {!skipped && !ok && <div className="text-rose-600 mt-0.5">{messages.join(' · ')}</div>}
                       </div>
-                      <i className={`fa-solid flex-shrink-0 mt-0.5 ${ok ? 'fa-check text-primary-600' : 'fa-xmark text-rose-600'}`}></i>
+                      <i className={`fa-solid flex-shrink-0 mt-0.5 ${tone.icon}`}></i>
                     </li>
                   );
                 })}
               </ul>
 
-              {stats.invalid > 0 && (
+              {(stats.invalid > 0 || stats.skipped > 0) && (
                 <p className="text-[11px] text-muted leading-relaxed">
-                  Hatalı satırlar atlanır, yalnızca geçerli olanlar eklenir. Düzeltip dosyayı yeniden yükleyebilirsiniz.
+                  {stats.invalid > 0 && 'Hatalı satırlar atlanır; düzeltip dosyayı yeniden yükleyebilirsiniz. '}
+                  {stats.skipped > 0 && 'Sınıfında ayrıldı, mezun, yatay geçiş veya tekamül yazan talebeler kurumdan ayrılmış sayılır ve eklenmez.'}
                 </p>
               )}
             </>

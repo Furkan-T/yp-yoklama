@@ -7,6 +7,8 @@ export interface ImportRow {
   rowNumber: number;
   student: Partial<Student>;
   errors: Record<string, string>;
+  /** Doluysa satır kasıtlı olarak atlanmıştır (hata değildir). */
+  skipReason?: string;
 }
 
 export interface ImportResult {
@@ -14,6 +16,17 @@ export interface ImportResult {
   /** Dosyada tanınamayan sütun başlıkları. */
   unknownColumns: string[];
 }
+
+/**
+ * Sınıf sütununda bu ifadelerden biri geçen talebeler kurumdan ayrılmıştır;
+ * listede kalmış olsalar da içe aktarılmazlar.
+ */
+const AYRILMA_ISARETLERI: { stem: string; label: string }[] = [
+  { stem: 'ayril', label: 'ayrıldı' },
+  { stem: 'mezun', label: 'mezun' },
+  { stem: 'yataygecis', label: 'yatay geçiş' },
+  { stem: 'tekamul', label: 'tekamül' },
+];
 
 type Target = keyof Student | 'supervisor';
 
@@ -96,7 +109,11 @@ const resolveHeader = (header: string): Target | null => {
  * ayrıca eklenir, bu yüzden burada yalnızca kısaltmalar listelenir.
  */
 const GROUP_ABBREVIATIONS: Record<string, string[]> = {
-  'Hazırlık-1': ['hazirlk1', 'hzrlk1', 'hzrl1', 'hazir1', 'haz1', 'h1'],
+  // Numarasız "Hazırlık" birinci kısma sayılır; ikinci kısım her zaman
+  // numarasıyla yazılır. Alt dizge araması en uzun eşleşmeyi seçtiği için
+  // "hazirlik2" yanlışlıkla "hazirlik" takma adına düşmez.
+  'Hazırlık-1': ['hazirlk1', 'hzrlk1', 'hzrl1', 'hazir1', 'haz1', 'h1',
+                 'hazirlik', 'hazirlk', 'hzrlk', 'hzrl', 'hazir', 'haz'],
   'Hazırlık-2': ['hazirlk2', 'hzrlk2', 'hzrl2', 'hazir2', 'haz2', 'h2'],
   'İbtidai': ['ibtida', 'ibtdi', 'ibtd', 'ibt'],
   // Eski kayıtlarda ve bazı listelerde "İzhari" yazımı geçiyor; aynı gruba eşlenir.
@@ -162,6 +179,18 @@ const matchGroup = (value: string): string => {
   }
 
   return best ? best.canonical : value.trim();
+};
+
+/**
+ * Sınıf değerinin "ayrıldı / mezun / yatay geçiş / tekamül" anlamına gelip
+ * gelmediğine bakar.
+ * @param grade - sınıf hücresindeki ham değer
+ * @returns ayrılma sebebi, ayrılmamışsa null
+ */
+const ayrilmaSebebi = (grade: string | undefined): string | null => {
+  const normalized = normalizeHeader(grade || '');
+  if (!normalized) return null;
+  return AYRILMA_ISARETLERI.find(m => normalized.includes(m.stem))?.label ?? null;
 };
 
 /**
@@ -236,6 +265,18 @@ export const parseStudentFile = async (
 
     if (!hasValue) return; // tamamen boş satırları atla
 
+    // Ayrılmış talebeler hiç değerlendirilmez; eksik alanları hata sayılmasın
+    const ayrilma = ayrilmaSebebi(student.grade);
+    if (ayrilma) {
+      rows.push({
+        rowNumber: headerIndex + offset + 2,
+        student,
+        errors: {},
+        skipReason: `Sınıf: ${ayrilma}`,
+      });
+      return;
+    }
+
     const errors = validateStudent(student, seen);
     if (Object.keys(errors).length === 0) {
       seen.push({ id: `satır-${offset}`, firstName: student.firstName, lastName: student.lastName });
@@ -284,7 +325,9 @@ export const downloadTemplate = async (): Promise<void> => {
     ...BLOOD_TYPES.map(type => [type]),
     [],
     ['NOT'],
-    ['Grup hücresinde yıl veya "grup" gibi ekler kullanılabilir: "2026 Grup Hazırlık" kabul edilir.'],
+    ['Grup hücresinde yıl veya "grup" gibi ekler kullanılabilir: "2026 Grup Hazırlık 1" kabul edilir.'],
+    ['Numarasız yazılan "Hazırlık" birinci kısma sayılır; ikinci kısmı "Hazırlık 2" olarak yazın.'],
+    ['Sınıf sütununda ayrıldı, mezun, yatay geçiş veya tekamül yazan talebeler içe aktarılmaz.'],
     ['Yurt dışı telefon numaralarını ülke koduyla ve + ile yazın: +998 90 123 45 67'],
   ]);
   reference['!cols'] = [{ wch: 24 }, { wch: 48 }];
@@ -295,8 +338,16 @@ export const downloadTemplate = async (): Promise<void> => {
 
 /** Önizleme başlığı için kısa özet. */
 export const summarize = (rows: ImportRow[]) => {
-  const valid = rows.filter(r => Object.keys(r.errors).length === 0);
-  return { total: rows.length, valid: valid.length, invalid: rows.length - valid.length, validRows: valid };
+  const skipped = rows.filter(r => r.skipReason);
+  const considered = rows.filter(r => !r.skipReason);
+  const valid = considered.filter(r => Object.keys(r.errors).length === 0);
+  return {
+    total: rows.length,
+    valid: valid.length,
+    invalid: considered.length - valid.length,
+    skipped: skipped.length,
+    validRows: valid,
+  };
 };
 
 export { fullName };
