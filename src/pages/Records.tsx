@@ -90,23 +90,23 @@ const Records: React.FC<RecordsProps> = ({ records, loading, showToast }) => {
   return (
     <div className="space-y-4 animate-fade-in w-full">
       <div className="pt-6 px-4 pb-4">
-        <div className="mb-2 flex items-center bg-dark-900/60 border border-primary-900/40 rounded-xl overflow-hidden w-full">
-          <div className="px-3 text-primary-300 flex-shrink-0"><i className="fa-solid fa-filter text-xs"></i></div>
+        <div className="mb-2 flex items-center bg-surface border border-line rounded-xl overflow-hidden w-full">
+          <div className="px-3 text-primary-700 flex-shrink-0"><i className="fa-solid fa-filter text-xs"></i></div>
           <input
             type="date"
             aria-label="Kayıt tarihi"
             value={historyDate}
             onChange={(e) => setHistoryDate(e.target.value)}
-            className="flex-1 bg-transparent text-white font-bold py-2 pr-4 outline-none text-sm [color-scheme:dark] min-w-0"
+            className="flex-1 bg-transparent text-ink font-bold py-2 pr-4 outline-none text-sm min-w-0"
           />
         </div>
 
-        <div className="flex bg-dark-900/80 p-1 rounded-xl mb-2 gap-2">
+        <div className="flex bg-surface-soft p-1 rounded-xl mb-2 gap-2">
           {ATTENDANCE_TYPES.map(type => (
             <button
               key={type}
               onClick={() => handleTypeChange(type)}
-              className={`flex-1 py-2 text-[11px] font-extrabold rounded-lg transition-all ${historyType === type ? 'bg-primary-500 text-white shadow-md' : 'text-dark-400 hover:text-dark-200'}`}
+              className={`flex-1 py-2 text-[11px] font-extrabold rounded-lg transition-all ${historyType === type ? 'bg-primary-500 text-white shadow-md' : 'text-muted hover:text-ink'}`}
             >
               {TYPE_LABELS[type]}
             </button>
@@ -117,7 +117,7 @@ const Records: React.FC<RecordsProps> = ({ records, loading, showToast }) => {
           aria-label="Vakit filtresi"
           value={historySubType}
           onChange={(e) => setHistorySubType(e.target.value)}
-          className="w-full p-2.5 bg-dark-900 border border-dark-800 rounded-xl text-primary-100 text-xs outline-none font-medium mb-2"
+          className="w-full p-2.5 bg-surface border border-line rounded-xl text-ink text-xs outline-none font-medium mb-2"
         >
           <option value={ALL}>TÜMÜNÜ GÖSTER</option>
           {SUB_TYPES[historyType].map(s => <option key={s} value={s}>{s}</option>)}
@@ -127,7 +127,7 @@ const Records: React.FC<RecordsProps> = ({ records, loading, showToast }) => {
           <button
             onClick={handleBulkDelete}
             disabled={isDeleting}
-            className="w-full py-2.5 px-4 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-400 font-bold text-xs hover:bg-rose-500 hover:text-white transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full py-2.5 px-4 bg-rose-50 border border-rose-200 rounded-xl text-rose-600 font-bold text-xs hover:bg-rose-500 hover:text-white transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isDeleting
               ? <><i className="fa-solid fa-circle-notch fa-spin"></i> Siliniyor...</>
@@ -138,23 +138,23 @@ const Records: React.FC<RecordsProps> = ({ records, loading, showToast }) => {
 
       <div className="space-y-2 px-4">
         {loading ? (
-          <p className="text-center text-dark-400 py-10">Yükleniyor...</p>
+          <p className="text-center text-muted py-10">Yükleniyor...</p>
         ) : filteredRecords.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20">
-            <div className="w-20 h-20 bg-dark-800 rounded-full flex items-center justify-center mb-4 border border-dark-700">
-              <i className="fa-solid fa-filter text-3xl text-dark-500"></i>
+            <div className="w-20 h-20 bg-surface-soft rounded-full flex items-center justify-center mb-4 border border-line">
+              <i className="fa-solid fa-filter text-3xl text-muted"></i>
             </div>
-            <h3 className="font-bold text-dark-300 text-lg">Kayıt Yok</h3>
-            <p className="text-xs text-dark-500 mt-1">Bu tarihte kayıt bulunamadı.</p>
+            <h3 className="font-bold text-muted text-lg">Kayıt Yok</h3>
+            <p className="text-xs text-muted mt-1">Bu tarihte kayıt bulunamadı.</p>
           </div>
         ) : (
           filteredRecords.map(record => (
-            <div key={record.id} className="p-3 bg-dark-900/60 rounded-xl border border-dark-800 flex justify-between items-center w-full gap-3">
+            <div key={record.id} className="p-3 bg-surface rounded-xl border border-line flex justify-between items-center w-full gap-3">
               <div className="flex items-center gap-3 min-w-0">
                 <div className={`w-1 h-8 rounded-full flex-shrink-0 ${STATUS_META[record.status].bar}`}></div>
                 <div className="min-w-0">
-                  <div className="font-bold text-sm text-primary-50 truncate">{record.studentName}</div>
-                  <div className="text-[10px] text-dark-400 mt-0.5">{normalizeSubType(record.subType)}</div>
+                  <div className="font-bold text-sm text-ink truncate">{record.studentName}</div>
+                  <div className="text-[10px] text-muted mt-0.5">{normalizeSubType(record.subType)}</div>
                 </div>
               </div>
               <div className="flex items-center gap-3 flex-shrink-0">
@@ -164,7 +164,7 @@ const Records: React.FC<RecordsProps> = ({ records, loading, showToast }) => {
                 <button
                   onClick={() => handleDeleteRecord(record)}
                   aria-label={`${record.studentName} kaydını sil`}
-                  className="w-8 h-8 flex items-center justify-center rounded-lg bg-rose-500/10 text-rose-400 hover:bg-rose-500 hover:text-white transition-all border border-rose-500/10"
+                  className="w-8 h-8 flex items-center justify-center rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-500 hover:text-white transition-all border border-rose-200"
                 >
                   <i className="fa-solid fa-trash-can text-xs"></i>
                 </button>

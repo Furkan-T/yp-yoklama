@@ -136,7 +136,7 @@ const App: React.FC = () => {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-dark-950 flex items-center justify-center text-primary-400">
+      <div className="min-h-screen bg-canvas flex items-center justify-center text-primary-600">
         <i className="fa-solid fa-circle-notch fa-spin text-4xl"></i>
       </div>
     );
@@ -144,27 +144,27 @@ const App: React.FC = () => {
   if (!user) return <Login />;
 
   return (
-    <div className="w-screen h-[100dvh] bg-dark-950 md:h-screen md:flex md:items-center md:justify-center">
-      <div className="w-full h-full md:max-w-md md:h-[calc(100vh-4rem)] bg-dark-950 flex flex-col font-sans text-primary-50 overflow-hidden relative md:rounded-[2.5rem] md:border md:border-primary-900/40 md:shadow-2xl">
+    <div className="w-screen h-[100dvh] bg-canvas md:h-screen md:flex md:items-center md:justify-center">
+      <div className="w-full h-full md:max-w-md md:h-[calc(100vh-4rem)] bg-canvas flex flex-col font-sans text-ink overflow-hidden relative md:rounded-[2.5rem] md:border md:border-line md:shadow-2xl">
         {toast && <Toast message={toast.message} type={toast.type} action={toast.action} onClose={closeToast} />}
         {ConfirmDialog}
         <IosInstallPrompt />
 
         {/* BAŞLIK */}
-        <header className="flex-none bg-dark-900 pt-12 pb-6 px-6 rounded-b-[2.5rem] shadow-xl border-b border-primary-900/30 z-30 flex justify-between items-center">
+        <header className="flex-none bg-surface pt-12 pb-6 px-6 rounded-b-[2.5rem] shadow-xl border-b border-line z-30 flex justify-between items-center">
           <div className="flex items-center gap-4">
             <img src="/logo.png" alt="" className="h-14 w-14 object-contain drop-shadow-[0_0_12px_rgba(25,112,96,0.45)]" />
             <div>
-              <h1 className="text-base font-extrabold text-primary-300 tracking-tight leading-tight whitespace-nowrap">{APP_NAME}</h1>
-              <p className="text-[10px] text-accent-500/80 font-bold tracking-[0.2em] uppercase mt-1">
-                Yönetici Paneli <span className="text-white/30 tracking-normal">· {APP_VERSION}</span>
+              <h1 className="text-base font-extrabold text-primary-700 tracking-tight leading-tight whitespace-nowrap">{APP_NAME}</h1>
+              <p className="text-[10px] text-accent-700 font-bold tracking-[0.2em] uppercase mt-1">
+                Yönetici Paneli <span className="text-muted tracking-normal">· {APP_VERSION}</span>
               </p>
             </div>
           </div>
           <button
             onClick={handleRefreshApp}
             aria-label="Uygulamayı yenile"
-            className="w-10 h-10 rounded-xl bg-dark-800 text-primary-300 flex items-center justify-center hover:bg-primary-500 hover:text-white transition-all shadow-lg shadow-black/20 active:scale-95"
+            className="w-10 h-10 rounded-xl bg-surface-soft text-primary-700 flex items-center justify-center hover:bg-primary-500 hover:text-white transition-all shadow-lg shadow-black/20 active:scale-95"
           >
             <i className="fa-solid fa-rotate-right text-lg"></i>
           </button>

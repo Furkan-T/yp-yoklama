@@ -4,7 +4,7 @@
 
 @layer base {
   :root {
-    color-scheme: dark;
+    color-scheme: light;
     font-synthesis: none;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
@@ -12,7 +12,7 @@
   }
 
   body {
-    @apply m-0 min-h-screen bg-dark-950 font-sans text-primary-50;
+    @apply m-0 min-h-screen bg-canvas font-sans text-ink;
   }
 
   /* iOS'ta form alanlarına odaklanınca sayfanın zumlamasını engeller */
@@ -26,7 +26,7 @@
 @layer components {
   .custom-scrollbar {
     scrollbar-width: thin;
-    scrollbar-color: theme('colors.dark.700') transparent;
+    scrollbar-color: theme('colors.line') transparent;
   }
 
   .custom-scrollbar::-webkit-scrollbar {
@@ -38,7 +38,7 @@
   }
 
   .custom-scrollbar::-webkit-scrollbar-thumb {
-    @apply rounded-full bg-dark-700;
+    @apply rounded-full bg-line;
   }
 }
 

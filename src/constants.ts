@@ -1,7 +1,7 @@
 import type { AttendanceType, AttendanceStatus } from './types';
 
 // Uygulama künyesi
-export const APP_VERSION = 'v1.4';
+export const APP_VERSION = 'v2.0';
 export const APP_NAME = 'Yoklama Takip Sistemi';
 
 // Doğrulama desenleri
@@ -23,7 +23,8 @@ export const TYPE_LABELS: Record<AttendanceType, string> = {
 
 /** Dahili ders grupları — hem talebe kaydında hem yoklama seansı olarak kullanılır. */
 export const DERS_GROUPS = [
-  'Hazırlık',
+  'Hazırlık-1',
+  'Hazırlık-2',
   'İbtidai',
   'İhzari',
   'Tekamülaltı',
@@ -59,25 +60,27 @@ export const STATUS_META: Record<AttendanceStatus, { short: string; label: strin
   VAR: {
     short: 'VAR',
     label: 'GELDİ',
-    badge: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-    bar: 'bg-emerald-500',
+    badge: 'bg-primary-50 text-primary-700 border-primary-200',
+    bar: 'bg-primary-500',
   },
+  // GEÇ ve İZİNLİ artık yoklama ekranından girilmiyor; eski kayıtlarda
+  // bulundukları için gösterim tarafında korunuyorlar.
   GEC: {
     short: 'GEC',
     label: 'GEÇ GELDİ',
-    badge: 'bg-accent-500/10 text-accent-400 border-accent-500/20',
+    badge: 'bg-accent-50 text-accent-800 border-accent-200',
     bar: 'bg-accent-500',
   },
   YOK: {
     short: 'YOK',
     label: 'DEVAMSIZ',
-    badge: 'bg-rose-500/10 text-rose-400 border-rose-500/20',
+    badge: 'bg-rose-50 text-rose-700 border-rose-200',
     bar: 'bg-rose-500',
   },
   IZINLI: {
     short: 'IZIN',
     label: 'İZİNLİ',
-    badge: 'bg-sky-500/10 text-sky-400 border-sky-500/20',
+    badge: 'bg-sky-50 text-sky-700 border-sky-200',
     bar: 'bg-sky-500',
   },
 };

@@ -82,43 +82,43 @@ const Settings: React.FC<SettingsProps> = ({ userEmail, records, showToast }) =>
 
   return (
     <div className="space-y-6 animate-fade-in w-full px-4 pt-6">
-      <div className="bg-dark-900/60 p-6 rounded-3xl border border-primary-900/30 flex items-center gap-4">
-        <div className="w-16 h-16 rounded-full bg-primary-500/15 flex items-center justify-center text-primary-300 text-2xl border border-primary-500/30 flex-shrink-0">
+      <div className="bg-surface p-6 rounded-3xl border border-line flex items-center gap-4">
+        <div className="w-16 h-16 rounded-full bg-primary-50 flex items-center justify-center text-primary-700 text-2xl border border-primary-200 flex-shrink-0">
           <i className="fa-solid fa-user-tie"></i>
         </div>
         <div className="min-w-0">
-          <div className="text-xs text-accent-500/80 uppercase font-bold tracking-wider">Aktif Hesap</div>
-          <div className="text-white font-bold text-lg break-all">{userEmail}</div>
+          <div className="text-xs text-accent-700 uppercase font-bold tracking-wider">Aktif Hesap</div>
+          <div className="text-ink font-bold text-lg break-all">{userEmail}</div>
         </div>
       </div>
 
       <div className="space-y-2">
-        <button onClick={handleExportCSV} className="w-full bg-dark-900/40 p-5 rounded-2xl border border-dark-800 flex items-center gap-3 hover:bg-dark-800 transition-colors active:scale-95">
-          <i className="fa-solid fa-file-csv text-primary-300"></i>
-          <span className="text-dark-100 font-bold">Verileri Yedekle (Excel/CSV)</span>
+        <button onClick={handleExportCSV} className="w-full bg-surface p-5 rounded-2xl border border-line flex items-center gap-3 hover:bg-surface-soft transition-colors active:scale-95">
+          <i className="fa-solid fa-file-csv text-primary-700"></i>
+          <span className="text-ink font-bold">Verileri Yedekle (Excel/CSV)</span>
         </button>
-        <button onClick={() => setShowAbout(true)} className="w-full bg-dark-900/40 p-5 rounded-2xl border border-dark-800 flex items-center gap-3 hover:bg-dark-800 transition-colors active:scale-95">
-          <i className="fa-solid fa-circle-info text-accent-400"></i>
-          <span className="text-dark-100 font-bold">Uygulama Hakkında</span>
+        <button onClick={() => setShowAbout(true)} className="w-full bg-surface p-5 rounded-2xl border border-line flex items-center gap-3 hover:bg-surface-soft transition-colors active:scale-95">
+          <i className="fa-solid fa-circle-info text-accent-700"></i>
+          <span className="text-ink font-bold">Uygulama Hakkında</span>
         </button>
       </div>
 
-      <button onClick={handleLogout} className="w-full bg-rose-500/10 border border-rose-500/30 p-5 rounded-2xl flex items-center justify-center gap-3 text-rose-400 font-bold hover:bg-rose-500 hover:text-white transition-all mt-8">
+      <button onClick={handleLogout} className="w-full bg-rose-50 border border-rose-200 p-5 rounded-2xl flex items-center justify-center gap-3 text-rose-600 font-bold hover:bg-rose-500 hover:text-white transition-all mt-8">
         <i className="fa-solid fa-right-from-bracket"></i>Güvenli Çıkış Yap
       </button>
 
-      <div className="text-center text-xs text-dark-500 mt-4">{APP_VERSION}</div>
+      <div className="text-center text-xs text-muted mt-4">{APP_VERSION}</div>
 
       {showAbout && (
-        <div className="absolute inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-6" role="dialog" aria-modal="true">
-          <div className="bg-dark-900 w-full md:max-w-sm rounded-3xl p-6 border border-primary-900/40 shadow-2xl relative text-center animate-slide-up">
-            <button onClick={() => setShowAbout(false)} aria-label="Kapat" className="absolute top-4 right-4 text-dark-400 hover:text-white">
+        <div className="absolute inset-0 z-[60] flex items-center justify-center bg-ink/40 backdrop-blur-sm p-6" role="dialog" aria-modal="true">
+          <div className="bg-surface w-full md:max-w-sm rounded-3xl p-6 border border-line shadow-2xl relative text-center animate-slide-up">
+            <button onClick={() => setShowAbout(false)} aria-label="Kapat" className="absolute top-4 right-4 text-muted hover:text-ink">
               <i className="fa-solid fa-xmark text-xl"></i>
             </button>
             <img src="/logo.png" alt="" className="w-20 h-20 mx-auto mb-4 object-contain" />
-            <h2 className="text-xl font-extrabold text-primary-300">{APP_NAME}</h2>
-            <p className="text-sm text-accent-500/80 mt-2 font-bold uppercase tracking-wider">Yönetici Paneli</p>
-            <p className="text-xs text-dark-400 mt-4 leading-relaxed">
+            <h2 className="text-xl font-extrabold text-primary-700">{APP_NAME}</h2>
+            <p className="text-sm text-accent-700 mt-2 font-bold uppercase tracking-wider">Yönetici Paneli</p>
+            <p className="text-xs text-muted mt-4 leading-relaxed">
               Talebe yoklamalarını ve devam takibini kolaylaştırmak için geliştirilmiş yönetici panelidir.
             </p>
             <button onClick={() => setShowAbout(false)} className="w-full py-3 rounded-xl bg-primary-500 text-white font-bold mt-6">Tamam</button>

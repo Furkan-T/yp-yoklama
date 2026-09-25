@@ -93,21 +93,21 @@ const Students: React.FC<StudentsProps> = ({ students, loading, showToast }) => 
   return (
     <div className="space-y-4 animate-fade-in w-full px-4 pt-6">
       <div className="flex gap-2">
-        <div className="flex-1 bg-dark-900/60 p-3 rounded-2xl border border-primary-900/30 flex items-center gap-2 min-w-0">
-          <i className="fa-solid fa-magnifying-glass text-dark-400"></i>
+        <div className="flex-1 bg-surface p-3 rounded-2xl border border-line flex items-center gap-2 min-w-0">
+          <i className="fa-solid fa-magnifying-glass text-muted"></i>
           <input
             type="text"
             placeholder="İsim, grup, fakülte ara..."
             aria-label="Talebe ara"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="bg-transparent w-full text-white outline-none placeholder-dark-500 font-bold min-w-0"
+            className="bg-transparent w-full text-ink outline-none placeholder-muted font-bold min-w-0"
           />
         </div>
         <button
           onClick={() => setShowImport(true)}
           aria-label="Excel'den toplu talebe ekle"
-          className="w-14 h-14 rounded-2xl bg-dark-800 border border-primary-900/40 text-primary-300 flex items-center justify-center active:scale-95 transition-all flex-shrink-0"
+          className="w-14 h-14 rounded-2xl bg-surface-soft border border-line text-primary-700 flex items-center justify-center active:scale-95 transition-all flex-shrink-0"
         >
           <i className="fa-solid fa-file-excel text-lg"></i>
         </button>
@@ -121,34 +121,34 @@ const Students: React.FC<StudentsProps> = ({ students, loading, showToast }) => 
       </div>
 
       <div className="space-y-3 w-full pb-40">
-        {loading && <p className="text-center text-dark-400 py-4">Yükleniyor...</p>}
-        {!loading && filteredStudents.length === 0 && <p className="text-center text-dark-400 py-4">Talebe bulunamadı.</p>}
+        {loading && <p className="text-center text-muted py-4">Yükleniyor...</p>}
+        {!loading && filteredStudents.length === 0 && <p className="text-center text-muted py-4">Talebe bulunamadı.</p>}
 
         {filteredStudents.map((student, index) => (
-          <div key={student.id} className="bg-dark-900/60 p-4 rounded-2xl border border-dark-800 flex items-center justify-between gap-3">
+          <div key={student.id} className="bg-surface p-4 rounded-2xl border border-line flex items-center justify-between gap-3">
             <div className="flex items-center gap-3 min-w-0">
-              <div className={`w-11 h-11 rounded-2xl flex items-center justify-center font-bold border shadow-inner flex-shrink-0 ${student.isActive === false ? 'bg-dark-900 border-dark-800 text-dark-500' : 'bg-dark-800 border-dark-700 text-primary-300'}`}>
+              <div className={`w-11 h-11 rounded-2xl flex items-center justify-center font-bold border shadow-inner flex-shrink-0 ${student.isActive === false ? 'bg-surface border-line text-muted' : 'bg-surface-soft border-line text-primary-700'}`}>
                 {index + 1}
               </div>
               <div className="min-w-0">
-                <div className="font-bold text-white flex items-center gap-2">
-                  <span className={`truncate ${student.isActive === false ? 'line-through text-dark-400' : ''}`}>
+                <div className="font-bold text-ink flex items-center gap-2">
+                  <span className={`truncate ${student.isActive === false ? 'line-through text-muted' : ''}`}>
                     {student.name || fullName(student)}
                   </span>
                   {student.isActive === false && (
-                    <span className="text-[9px] bg-rose-500/10 text-rose-400 px-2 py-0.5 rounded border border-rose-500/20 uppercase tracking-widest font-extrabold flex-shrink-0">Pasif</span>
+                    <span className="text-[9px] bg-rose-50 text-rose-600 px-2 py-0.5 rounded border border-rose-200 uppercase tracking-widest font-extrabold flex-shrink-0">Pasif</span>
                   )}
                 </div>
-                <div className="text-xs text-dark-400 flex items-center gap-2">
+                <div className="text-xs text-muted flex items-center gap-2">
                   <span className="truncate">{student.faculty || student.department || '—'}</span>
-                  {student.group && <span className="text-accent-500 font-bold flex-shrink-0">{student.group}</span>}
+                  {student.group && <span className="text-accent-700 font-bold flex-shrink-0">{student.group}</span>}
                 </div>
               </div>
             </div>
             <div className="flex gap-1.5 flex-shrink-0">
-              <button onClick={() => openWhatsApp(student.parentPhone, `${student.name} velisinin`)} aria-label={`${student.name} velisine WhatsApp'tan yaz`} className="w-9 h-9 flex items-center justify-center rounded-xl text-green-500 bg-green-500/10 hover:bg-green-500 hover:text-white transition-all border border-green-500/10"><i className="fa-brands fa-whatsapp text-lg"></i></button>
-              <button onClick={() => openEdit(student)} aria-label={`${student.name} bilgilerini düzenle`} className="w-9 h-9 flex items-center justify-center rounded-xl text-accent-400 bg-accent-500/10 hover:bg-accent-500 hover:text-dark-950 transition-all border border-accent-500/10"><i className="fa-solid fa-pen"></i></button>
-              <button onClick={() => handleDelete(student)} aria-label={`${student.name} kaydını sil`} className="w-9 h-9 flex items-center justify-center rounded-xl text-rose-400 bg-rose-500/10 hover:bg-rose-500 hover:text-white transition-all border border-rose-500/10"><i className="fa-solid fa-trash-can"></i></button>
+              <button onClick={() => openWhatsApp(student.parentPhone, `${student.name} velisinin`)} aria-label={`${student.name} velisine WhatsApp'tan yaz`} className="w-9 h-9 flex items-center justify-center rounded-xl text-green-600 bg-green-50 hover:bg-green-600 hover:text-white transition-all border border-green-200"><i className="fa-brands fa-whatsapp text-lg"></i></button>
+              <button onClick={() => openEdit(student)} aria-label={`${student.name} bilgilerini düzenle`} className="w-9 h-9 flex items-center justify-center rounded-xl text-accent-700 bg-accent-50 hover:bg-accent-500 hover:text-ink transition-all border border-accent-200"><i className="fa-solid fa-pen"></i></button>
+              <button onClick={() => handleDelete(student)} aria-label={`${student.name} kaydını sil`} className="w-9 h-9 flex items-center justify-center rounded-xl text-rose-600 bg-rose-50 hover:bg-rose-500 hover:text-white transition-all border border-rose-200"><i className="fa-solid fa-trash-can"></i></button>
             </div>
           </div>
         ))}

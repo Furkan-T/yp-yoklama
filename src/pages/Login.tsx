@@ -23,43 +23,43 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="w-screen h-[100dvh] bg-dark-900 md:bg-dark-950 flex items-center justify-center font-sans overflow-hidden">
-      <div className="w-full h-full md:h-auto md:max-w-sm bg-dark-900 p-8 md:rounded-[2.5rem] md:shadow-2xl md:border border-primary-900/40 flex flex-col justify-center">
+    <div className="w-screen h-[100dvh] bg-surface md:bg-canvas flex items-center justify-center font-sans overflow-hidden">
+      <div className="w-full h-full md:h-auto md:max-w-sm bg-surface p-8 md:rounded-[2.5rem] md:shadow-2xl md:border border-line flex flex-col justify-center">
         <div className="flex flex-col items-center mb-10">
           <img src="/logo.png" alt="" className="h-24 w-24 object-contain drop-shadow-[0_0_18px_rgba(25,112,96,0.5)] mb-4" />
-          <h1 className="text-3xl font-extrabold text-primary-300 text-center leading-tight">{APP_NAME}</h1>
-          <p className="text-xs text-accent-500/80 mt-1 uppercase tracking-widest font-bold">Yönetici Paneli</p>
+          <h1 className="text-3xl font-extrabold text-primary-700 text-center leading-tight">{APP_NAME}</h1>
+          <p className="text-xs text-accent-700 mt-1 uppercase tracking-widest font-bold">Yönetici Paneli</p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-5">
           <div>
-            <label htmlFor="email" className="text-xs font-bold text-dark-400 ml-4 mb-1 block uppercase">E-Posta</label>
+            <label htmlFor="email" className="text-xs font-bold text-muted ml-4 mb-1 block uppercase">E-Posta</label>
             <input
               id="email"
               type="email"
               autoComplete="username"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full p-4 bg-dark-950 rounded-2xl border border-dark-800 text-white focus:border-primary-500 focus:ring-1 focus:ring-primary-500 outline-none transition-all"
+              className="w-full p-4 bg-canvas rounded-2xl border border-line text-ink focus:border-primary-500 focus:ring-1 focus:ring-primary-500 outline-none transition-all"
               placeholder="ornek@eposta.com"
               required
             />
           </div>
           <div>
-            <label htmlFor="password" className="text-xs font-bold text-dark-400 ml-4 mb-1 block uppercase">Şifre</label>
+            <label htmlFor="password" className="text-xs font-bold text-muted ml-4 mb-1 block uppercase">Şifre</label>
             <input
               id="password"
               type="password"
               autoComplete="current-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full p-4 bg-dark-950 rounded-2xl border border-dark-800 text-white focus:border-primary-500 focus:ring-1 focus:ring-primary-500 outline-none transition-all"
+              className="w-full p-4 bg-canvas rounded-2xl border border-line text-ink focus:border-primary-500 focus:ring-1 focus:ring-primary-500 outline-none transition-all"
               placeholder="••••••••"
               required
             />
           </div>
 
-          {error && <p role="alert" className="text-rose-400 text-sm text-center font-bold bg-rose-500/10 py-2 rounded-xl">{error}</p>}
+          {error && <p role="alert" className="text-rose-600 text-sm text-center font-bold bg-rose-50 py-2 rounded-xl">{error}</p>}
 
           <button
             type="submit"

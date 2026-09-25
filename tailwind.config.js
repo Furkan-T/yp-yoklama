@@ -37,7 +37,16 @@ export default {
           900: '#45351a',
           950: '#241b0d',
         },
-        // Logonun grisinden türetilmiş, hafif yeşile çalan nötr skala
+        // Açık tema için anlamsal renkler. Bileşenler doğrudan gri tonu yerine
+        // bunları kullanır; tema değişikliği tek yerden yapılabilsin diye.
+        canvas: '#f3f6f5',        // sayfa zemini
+        surface: '#ffffff',       // kart ve panel zemini
+        'surface-soft': '#eef2f1',// ikincil panel / sekme şeridi
+        ink: '#17211e',           // ana metin
+        muted: '#61706b',         // ikincil metin
+        line: '#dde5e2',          // kenarlıklar
+
+        // Logonun grisinden türetilmiş nötr skala (koyu vurgular için)
         dark: {
           DEFAULT: '#0d1211',
           50: '#f6f7f7',

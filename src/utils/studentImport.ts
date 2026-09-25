@@ -96,7 +96,8 @@ const resolveHeader = (header: string): Target | null => {
  * ayrıca eklenir, bu yüzden burada yalnızca kısaltmalar listelenir.
  */
 const GROUP_ABBREVIATIONS: Record<string, string[]> = {
-  'Hazırlık': ['hazirlk', 'hzrlk', 'hzrl', 'hazir', 'haz'],
+  'Hazırlık-1': ['hazirlk1', 'hzrlk1', 'hzrl1', 'hazir1', 'haz1', 'h1'],
+  'Hazırlık-2': ['hazirlk2', 'hzrlk2', 'hzrl2', 'hazir2', 'haz2', 'h2'],
   'İbtidai': ['ibtida', 'ibtdi', 'ibtd', 'ibt'],
   // Eski kayıtlarda ve bazı listelerde "İzhari" yazımı geçiyor; aynı gruba eşlenir.
   'İhzari': ['ihzar', 'ihzri', 'ihzr', 'ihz', 'izhari', 'izhar', 'izhri', 'izhr', 'izh'],
@@ -136,10 +137,12 @@ const matchGroup = (value: string): string => {
   const raw = deaccent(value);
   if (!raw.trim()) return '';
 
-  // Anlamlı parçaları ayıkla: rakamlar ve genel kelimeler düşer
+  // Anlamlı parçaları ayıkla. Yıl gibi uzun sayılar ve genel kelimeler düşer;
+  // tek-iki haneli sayılar korunur, çünkü grup numarası olabilirler ("Hazırlık 1").
+  const isNoise = (token: string) => /^\d{3,}$/.test(token) || GROUP_STOP_WORDS.has(token);
   const core = raw
     .split(/[^a-z0-9]+/)
-    .filter(token => token && !/^\d+$/.test(token) && !GROUP_STOP_WORDS.has(token))
+    .filter(token => token && !isNoise(token))
     .join('');
 
   if (!core) return value.trim();

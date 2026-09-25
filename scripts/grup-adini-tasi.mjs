@@ -1,14 +1,15 @@
 /**
- * Tek seferlik taşıma: "İzhari" olarak kaydedilmiş dahili ders grubunu
- * "İhzari" olarak günceller.
+ * Bir dahili ders grubunun adını toplu olarak değiştirir.
  *
  * Grup adı hem talebe kaydında (students.group) hem de yoklama kayıtlarında
  * (attendance.subType) saklandığı için ikisi birden güncellenir; aksi halde
  * eski yoklamalar Geçmiş ekranındaki vakit filtresinde görünmez.
  *
  * Kullanım (proje kökünden):
- *   node scripts/grup-adini-tasi.mjs           # yalnızca rapor verir, yazmaz
- *   node scripts/grup-adini-tasi.mjs --apply   # değişiklikleri uygular
+ *   node scripts/grup-adini-tasi.mjs                              # İzhari -> İhzari, yalnızca rapor
+ *   node scripts/grup-adini-tasi.mjs --apply                      # uygular
+ *   node scripts/grup-adini-tasi.mjs "Hazırlık" "Hazırlık-1"      # başka bir taşıma, rapor
+ *   node scripts/grup-adini-tasi.mjs "Hazırlık" "Hazırlık-1" --apply
  *
  * Yönetici e-posta ve şifresi sorulur; bunlar hiçbir yere kaydedilmez.
  */
@@ -18,10 +19,10 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
 import { getFirestore, collection, query, where, getDocs, writeBatch, doc } from 'firebase/firestore';
 
-const ESKI = 'İzhari';
-const YENI = 'İhzari';
 const BATCH_LIMIT = 450;
 const apply = process.argv.includes('--apply');
+const args = process.argv.slice(2).filter(a => a !== '--apply');
+const [ESKI = 'İzhari', YENI = 'İhzari'] = args;
 
 /** .env.local dosyasını okur (Node kendiliğinden yüklemez). */
 const readEnv = () => {
