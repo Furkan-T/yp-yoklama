@@ -368,7 +368,6 @@ export const exportStudents = async (students: Student[]): Promise<void> => {
 
   const sheet = XLSX.utils.aoa_to_sheet([[...IMPORT_COLUMNS, 'Durum'], ...rows]);
   sheet['!cols'] = [...IMPORT_COLUMNS, 'Durum'].map(header => ({ wch: Math.max(header.length + 4, 14) }));
-  sheet['!freeze'] = { xSplit: '0', ySplit: '1' };
 
   const book = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(book, sheet, 'Talebeler');

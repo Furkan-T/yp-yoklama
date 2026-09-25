@@ -6,6 +6,7 @@ import { normalizeSubType } from '../utils/validation';
 import { useConfirm } from '../hooks/useConfirm';
 import ResetDataModal from '../components/ResetDataModal';
 import { exportStudents } from '../utils/studentImport';
+import WeeklyReportModal from '../components/WeeklyReportModal';
 
 interface SettingsProps {
   userEmail: string | undefined;
@@ -18,6 +19,7 @@ const Settings: React.FC<SettingsProps> = ({ userEmail, students, records, showT
   const [showAbout, setShowAbout] = useState(false);
   const [showReset, setShowReset] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [showReport, setShowReport] = useState(false);
   const auth = getAuth();
   const { confirm, ConfirmDialog } = useConfirm();
 
@@ -116,6 +118,14 @@ const Settings: React.FC<SettingsProps> = ({ userEmail, students, records, showT
 
       <div className="space-y-2">
         <button
+          onClick={() => setShowReport(true)}
+          className="w-full bg-surface p-5 rounded-2xl border border-line flex items-center gap-3 hover:bg-surface-soft transition-colors active:scale-95"
+        >
+          <i className="fa-solid fa-calendar-week text-accent-700"></i>
+          <span className="text-ink font-bold">Haftalık Rapor</span>
+          <i className="fa-solid fa-chevron-right ml-auto text-xs text-muted"></i>
+        </button>
+        <button
           onClick={handleExportStudents}
           disabled={isExporting}
           className="w-full bg-surface p-5 rounded-2xl border border-line flex items-center gap-3 hover:bg-surface-soft transition-colors active:scale-95 disabled:opacity-50"
@@ -174,6 +184,15 @@ const Settings: React.FC<SettingsProps> = ({ userEmail, students, records, showT
             <button onClick={() => setShowAbout(false)} className="w-full py-3 rounded-xl bg-primary-500 text-white font-bold mt-6">Tamam</button>
           </div>
         </div>
+      )}
+
+      {showReport && (
+        <WeeklyReportModal
+          students={students}
+          records={records}
+          showToast={showToast}
+          onClose={() => setShowReport(false)}
+        />
       )}
 
       {showReset && (

@@ -15,6 +15,7 @@ React 19, TypeScript ve Cloud Firestore ile yazılmıştır. Arayüz tamamen Tü
 - **Geçmiş** — Kayıtları tarih ve seansa göre filtreleme, tekil veya toplu silme
 - **Geri alınabilir silme** — Kayıtlar yok edilmez, arşivlenir ve bildirimdeki "Geri Al" ile kurtarılabilir
 - **Dışa aktarma** — Talebe listesi Excel olarak (indirilip düzenlenip geri yüklenebilir), yoklama geçmişi Excel uyumlu CSV olarak
+- **Haftalık rapor** — Cumartesiden cumaya, talebe başına gelinmeyen dahili ders ve her namaz vakti ayrı ayrı; iki sayfalı Excel
 - **Çevrimdışı çalışma** — Firestore kalıcı önbelleği; bağlantı dönünce eşitlenir
 - **Kurulabilir** — Ana ekrandan yerel uygulama gibi açılır
 
@@ -67,6 +68,7 @@ flowchart TB
 | **Yoklama kaydı için tek `writeBatch`** | Talebe başına okuma + yazma yapmak 30 kişilik bir seansta 60 tur demek olurdu ve yarısı başarısız olabilirdi. Tek sorgu mevcut kayıtları yükler, tek batch tüm değişiklikleri yazar: 2 tur ve ya hepsi ya hiçbiri. |
 | **Sıfırlama da arşivler** | "Tüm Verileri Sıfırla" tek dokunuşla bütün talebeleri ve yoklamaları kapsıyor; kalıcı silme olsaydı yanlış basış geri dönüşsüz olurdu. Aynı `isDeleted` bayrağını kullanır, onay için kullanıcıya bir kelime yazdırır ve `scripts/silinenleri-geri-al.mjs` ile geri alınabilir. Bu düğmenin kalıcı olup olmayacağı ayrıca değerlendirilecek; Ayarlar'daki "Tehlikeli Bölge" bloğu ile bileşen importu silinerek kaldırılabilir. |
 | **`deleteDoc` yerine yumuşak silme** | Silmeler toplu yapılır; "tümünü sil" yanlışlıkla bir günün tamamını yok edebilir. Yazmalar `isDeleted` bayrağı koyar, dinleyiciler bunları eler — görünüş aynı, ama geri alınabilir. |
+| **Raporda yalnızca YOK devamsızlık sayılır** | Yoklama girişi VAR ve YOK üretiyor; eski kayıtlardaki GEÇ ise geç de olsa gelinmiş demek. Raporun "gelmedi" sayısı bu yüzden yalnızca YOK kayıtlarını toplar. Sıfır devamsızlığın gerçekten temiz mi yoksa hiç yoklama alınmamış mı olduğu anlaşılsın diye özet tabloda "Alınan Yoklama" sütunu da var. |
 | **Ana ekranda dahili ders tek seans sayılır** | Dahili ders grup grup alındığı için her grup ayrı bir `subType` taşır. Seansları tür ve vakit ikilisiyle gruplamak, ana ekranda yalnızca en son kaydedilen grubun görünmesine yol açıyordu. Artık günün dahili ders kayıtları tek seans sayılıp birleştiriliyor, devamsızın yanında grubu yazıyor. Namazda vakit tüm gruplarda ortak olduğu için orada değişiklik yok. |
 | **Kaydedince ekranda kalıp sıradaki gruba geçilir** | Yoklama grup grup alınıyor: kaydettikten sonra Geçmiş'e yönlendirmek, kullanıcıyı her seferinde sekmeye dönüp tür ve grubu yeniden seçmeye zorluyordu. Artık ekranda kalınır ve bir sonraki gruba geçilir; seçimler App'te tutulduğu için sekme değişse de kaybolmaz. Grup düğmeleri o gün tamamlananları işaretli gösterir. |
 | **Yoklamada yalnızca yok işaretlenir** | Bir seansta talebelerin ezici çoğunluğu mevcut oluyor; herkese tek tek durum seçtirmek gereksiz dokunuş demekti. Artık yalnızca gelmeyenler işaretleniyor, kaydederken listedeki herkese kayıt yazılıyor: işaretliler YOK, kalanlar VAR. Kayıt yalnızca ekranda listelenen gruba yazılır, diğer grupların aynı seanstaki kayıtlarına dokunulmaz. |
@@ -258,7 +260,7 @@ değiştirilmemiştir (bkz. `TYPE_LABELS`).
 | Yoklama | Tarih, tür ve gruba göre hızlı yoklama girişi; gelmeyenler tek dokunuşla işaretlenir |
 | Talebeler | Kayıt ekleme, düzenleme, arama, Excel'den toplu ekleme; veliye tek dokunuşla WhatsApp |
 | Geçmiş | Geçmiş kayıtları tarih ve seansa göre görüntüleme ve silme |
-| Ayarlar | Talebe listesi ve yoklama geçmişi dışa aktarma, hesap bilgisi, çıkış, tüm verileri sıfırlama |
+| Ayarlar | Haftalık rapor, talebe listesi ve yoklama geçmişi dışa aktarma, hesap bilgisi, çıkış, tüm verileri sıfırlama |
 
 ## Güvenlik
 
