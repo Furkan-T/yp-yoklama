@@ -13,8 +13,8 @@ export default defineConfig({
         short_name: 'Yoklama',
         description: 'Talebe Takip ve Yoklama Sistemi',
         lang: 'tr',
-        theme_color: '#0d1211',
-        background_color: '#0d1211',
+        theme_color: '#f3f6f5',
+        background_color: '#f3f6f5',
         display: 'standalone',
         orientation: 'portrait',
         icons: [
