@@ -3,7 +3,7 @@ import { db } from './firebase';
 import { getAuth, onAuthStateChanged, type User } from "firebase/auth";
 import { collection, onSnapshot, query, orderBy } from "firebase/firestore";
 import type { Student, AttendanceRecord, AttendanceType, TabKey, ShowToastFn } from './types';
-import { APP_VERSION, APP_NAME, SUB_TYPES } from './constants';
+import { APP_VERSION, APP_NAME, SUB_TYPES, ALL_GROUPS } from './constants';
 import { getLocalDateISO, timestampToDateISO } from './utils/validation';
 
 import BottomNav from './components/BottomNav';
@@ -11,7 +11,7 @@ import IosInstallPrompt from './components/IosInstallPrompt';
 import Toast from './components/Toast';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
-import AttendancePage from './pages/Attendance';
+import AttendancePage, { type AttendanceSession } from './pages/Attendance';
 import Students from './pages/Students';
 import Records from './pages/Records';
 import Settings from './pages/Settings';
@@ -24,6 +24,15 @@ const App: React.FC = () => {
   const [authLoading, setAuthLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TabKey>('dashboard');
   const mainRef = useRef<HTMLElement>(null);
+
+  // Yoklama ekranındaki seçimler burada tutulur: sekme değiştirip geri dönünce
+  // tarih, tür ve grubu yeniden seçmek gerekmesin.
+  const [session, setSession] = useState<AttendanceSession>({
+    date: getLocalDateISO(),
+    type: 'ETUT',
+    subType: SUB_TYPES.ETUT[0],
+    group: ALL_GROUPS,
+  });
 
   // GLOBAL VERİLER — tüm dinleyiciler burada açılır, sayfalara props olarak iner.
   const [students, setStudents] = useState<Student[]>([]);
@@ -173,7 +182,7 @@ const App: React.FC = () => {
         {/* İÇERİK */}
         <main ref={mainRef} className="flex-1 overflow-y-auto w-full custom-scrollbar">
           {activeTab === 'dashboard' && <Dashboard stats={stats} studentLoading={studentLoading} />}
-          {activeTab === 'attendance' && <AttendancePage students={students} records={records} setActiveTab={setActiveTab} showToast={showToast} />}
+          {activeTab === 'attendance' && <AttendancePage students={students} records={records} session={session} setSession={setSession} showToast={showToast} />}
           {activeTab === 'students' && <Students students={students} loading={studentLoading} showToast={showToast} />}
           {activeTab === 'records' && <Records records={records} loading={loading} showToast={showToast} />}
           {activeTab === 'settings' && <Settings userEmail={user.email || ''} students={students} records={records} showToast={showToast} />}

@@ -14,7 +14,7 @@ React 19, TypeScript ve Cloud Firestore ile yazılmıştır. Arayüz tamamen Tü
 - **Excel'den toplu ekleme** — Şablon indirme, esnek sütun ve değer eşleme (kısaltmalar, yıl ekleri), ayrılmış talebeleri otomatik eleme, satır bazlı doğrulama ve önizleme
 - **Geçmiş** — Kayıtları tarih ve seansa göre filtreleme, tekil veya toplu silme
 - **Geri alınabilir silme** — Kayıtlar yok edilmez, arşivlenir ve bildirimdeki "Geri Al" ile kurtarılabilir
-- **CSV dışa aktarma** — Excel uyumlu, özet istatistikli rapor
+- **Dışa aktarma** — Talebe listesi Excel olarak (indirilip düzenlenip geri yüklenebilir), yoklama geçmişi Excel uyumlu CSV olarak
 - **Çevrimdışı çalışma** — Firestore kalıcı önbelleği; bağlantı dönünce eşitlenir
 - **Kurulabilir** — Ana ekrandan yerel uygulama gibi açılır
 
@@ -67,6 +67,7 @@ flowchart TB
 | **Yoklama kaydı için tek `writeBatch`** | Talebe başına okuma + yazma yapmak 30 kişilik bir seansta 60 tur demek olurdu ve yarısı başarısız olabilirdi. Tek sorgu mevcut kayıtları yükler, tek batch tüm değişiklikleri yazar: 2 tur ve ya hepsi ya hiçbiri. |
 | **Sıfırlama da arşivler** | "Tüm Verileri Sıfırla" tek dokunuşla bütün talebeleri ve yoklamaları kapsıyor; kalıcı silme olsaydı yanlış basış geri dönüşsüz olurdu. Aynı `isDeleted` bayrağını kullanır, onay için kullanıcıya bir kelime yazdırır ve `scripts/silinenleri-geri-al.mjs` ile geri alınabilir. Bu düğmenin kalıcı olup olmayacağı ayrıca değerlendirilecek; Ayarlar'daki "Tehlikeli Bölge" bloğu ile bileşen importu silinerek kaldırılabilir. |
 | **`deleteDoc` yerine yumuşak silme** | Silmeler toplu yapılır; "tümünü sil" yanlışlıkla bir günün tamamını yok edebilir. Yazmalar `isDeleted` bayrağı koyar, dinleyiciler bunları eler — görünüş aynı, ama geri alınabilir. |
+| **Kaydedince ekranda kalıp sıradaki gruba geçilir** | Yoklama grup grup alınıyor: kaydettikten sonra Geçmiş'e yönlendirmek, kullanıcıyı her seferinde sekmeye dönüp tür ve grubu yeniden seçmeye zorluyordu. Artık ekranda kalınır ve bir sonraki gruba geçilir; seçimler App'te tutulduğu için sekme değişse de kaybolmaz. Grup düğmeleri o gün tamamlananları işaretli gösterir. |
 | **Yoklamada yalnızca yok işaretlenir** | Bir seansta talebelerin ezici çoğunluğu mevcut oluyor; herkese tek tek durum seçtirmek gereksiz dokunuş demekti. Artık yalnızca gelmeyenler işaretleniyor, kaydederken listedeki herkese kayıt yazılıyor: işaretliler YOK, kalanlar VAR. Kayıt yalnızca ekranda listelenen gruba yazılır, diğer grupların aynı seanstaki kayıtlarına dokunulmaz. |
 | **Ayrılmış talebeler içe aktarılmaz** | Kurum listelerinde ayrılan talebeler satırdan silinmek yerine sınıf sütununa "ayrıldı", "mezun", "yatay geçiş" ya da "tekamül" yazılarak işaretleniyor. İçe aktarma bu satırları eler; sessizce düşürmemek için önizlemede ayrı bir sayaçla ve sebebiyle gösterilir. |
 | **Grup değerleri esnek eşleştirilir** | Listeler farklı ellerden geliyor: aynı grup "K.Kerim", "kkrm" ya da "2026 Grup Hazırlık 2" diye yazılabiliyor. Numarasız yazılan "Hazırlık" birinci kısma sayılır. İçe aktarmada yıl ve "grup" gibi ekler ayıklanıp kısaltmalara bakılır. Tanınmayan değer sessizce bir gruba atanmaz, satır hatayla işaretlenir. |
@@ -256,7 +257,7 @@ değiştirilmemiştir (bkz. `TYPE_LABELS`).
 | Yoklama | Tarih, tür ve gruba göre hızlı yoklama girişi; gelmeyenler tek dokunuşla işaretlenir |
 | Talebeler | Kayıt ekleme, düzenleme, arama, Excel'den toplu ekleme; veliye tek dokunuşla WhatsApp |
 | Geçmiş | Geçmiş kayıtları tarih ve seansa göre görüntüleme ve silme |
-| Ayarlar | CSV dışa aktarma, hesap bilgisi, çıkış, tüm verileri sıfırlama |
+| Ayarlar | Talebe listesi ve yoklama geçmişi dışa aktarma, hesap bilgisi, çıkış, tüm verileri sıfırlama |
 
 ## Güvenlik
 

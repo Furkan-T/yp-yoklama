@@ -1,7 +1,7 @@
 import type { AttendanceType, AttendanceStatus } from './types';
 
 // Uygulama künyesi
-export const APP_VERSION = 'v2.2';
+export const APP_VERSION = 'v2.3';
 export const APP_NAME = 'Yoklama Takip Sistemi';
 
 // Doğrulama desenleri
@@ -51,6 +51,9 @@ export const BLOOD_TYPES = [
   'AB Rh+', 'AB Rh-',
   '0 Rh+', '0 Rh-',
 ];
+
+/** Namaz yoklamasında "tüm gruplar" seçeneğinin değeri. */
+export const ALL_GROUPS = 'HEPSI';
 
 /** Bir talebe kaydında en fazla kaç grup mesulü tutulabilir. */
 export const MAX_SUPERVISORS = 2;

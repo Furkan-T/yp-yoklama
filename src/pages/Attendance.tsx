@@ -1,69 +1,83 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { db } from '../firebase';
 import { collection, doc, Timestamp, query, where, getDocs, writeBatch, serverTimestamp } from "firebase/firestore";
-import type { Student, AttendanceType, AttendanceRecord, TabKey, ShowToastFn } from '../types';
-import { ATTENDANCE_TYPES, SUB_TYPES, TYPE_LABELS, DERS_GROUPS } from '../constants';
-import { isFutureDate, getLocalDateISO, timestampToDateISO, normalizeSubType } from '../utils/validation';
+import type { Student, AttendanceType, AttendanceRecord, ShowToastFn } from '../types';
+import { ATTENDANCE_TYPES, SUB_TYPES, TYPE_LABELS, DERS_GROUPS, ALL_GROUPS } from '../constants';
+import { isFutureDate, timestampToDateISO, normalizeSubType } from '../utils/validation';
 import { useConfirm } from '../hooks/useConfirm';
+
+/** Yoklama ekranındaki seçimler; App'te tutulur, sekme değişince kaybolmaz. */
+export interface AttendanceSession {
+  date: string;
+  type: AttendanceType;
+  subType: string;
+  /** Yalnızca namazda kullanılır; dahili derste seansın kendisi gruptur. */
+  group: string;
+}
 
 interface AttendancePageProps {
   students: Student[];
   records: AttendanceRecord[];
-  setActiveTab: (tab: TabKey) => void;
+  session: AttendanceSession;
+  setSession: React.Dispatch<React.SetStateAction<AttendanceSession>>;
   showToast: ShowToastFn;
 }
 
-const ALL_GROUPS = 'HEPSI';
-
-const AttendancePage: React.FC<AttendancePageProps> = ({ students, records, setActiveTab, showToast }) => {
-  const [selectedType, setSelectedType] = useState<AttendanceType>('ETUT');
-  const [selectedSubType, setSelectedSubType] = useState<string>(SUB_TYPES.ETUT[0]);
-  const [selectedDate, setSelectedDate] = useState<string>(getLocalDateISO());
-  // Namazda vakit ile grup ayrı seçilir; dahili derste seansın kendisi zaten gruptur.
-  const [namazGroup, setNamazGroup] = useState<string>(ALL_GROUPS);
+const AttendancePage: React.FC<AttendancePageProps> = ({ students, records, session, setSession, showToast }) => {
+  const { date, type, subType, group } = session;
   /** Yok olarak işaretlenen talebeler. Listedeki diğer herkes var sayılır. */
   const [absentIds, setAbsentIds] = useState<Set<string>>(new Set());
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { confirm, ConfirmDialog } = useConfirm();
 
-  const activeGroup = selectedType === 'ETUT' ? selectedSubType : namazGroup;
-  const sessionKey = `${selectedDate}|${selectedType}|${selectedSubType}|${activeGroup}`;
+  // Dahili derste seans zaten gruptur; namazda vakit ile grup ayrı seçilir.
+  const activeGroup = type === 'ETUT' ? subType : group;
+  const sessionKey = `${date}|${type}|${subType}|${activeGroup}`;
 
   // Kullanıcının elle dokunduğu seans. Kaydetme sonrası gelen snapshot'ın
   // ekrandaki seçimleri ezmemesi için tutulur.
   const touchedSessionRef = useRef<string | null>(null);
 
-  // Gruba atanmamış talebeler (group boş) her grupta listelenir.
-  const filteredStudents = useMemo(() => {
-    const activeStudents = students.filter(s => s.isActive !== false);
-    if (activeGroup === ALL_GROUPS) return activeStudents;
-    return activeStudents.filter(s => !s.group || s.group === activeGroup);
-  }, [students, activeGroup]);
+  const activeStudents = useMemo(() => students.filter(s => s.isActive !== false), [students]);
 
-  // Seçilen tarih/tür/vakit için kayıtlı durumlar
-  const savedStatuses = useMemo(() => {
+  /** Gruba atanmamış talebeler (group boş) her grupta listelenir. */
+  const studentsOf = useMemo(() => (g: string) =>
+    g === ALL_GROUPS ? activeStudents : activeStudents.filter(s => !s.group || s.group === g),
+  [activeStudents]);
+
+  const filteredStudents = useMemo(() => studentsOf(activeGroup), [studentsOf, activeGroup]);
+
+  /** Bu tarih/tür/vakit için kayıtlı talebe kimlikleri ve durumları. */
+  const statusesFor = useMemo(() => (forSubType: string) => {
+    const target = normalizeSubType(forSubType);
     const saved = new Map<string, string>();
-    const target = normalizeSubType(selectedSubType);
     records.forEach(r => {
-      if (r.type !== selectedType) return;
-      if (timestampToDateISO(r.date) !== selectedDate) return;
+      if (r.type !== type) return;
+      if (timestampToDateISO(r.date) !== date) return;
       if (normalizeSubType(r.subType) !== target) return;
       saved.set(r.studentId, r.status);
     });
     return saved;
-  }, [records, selectedDate, selectedType, selectedSubType]);
+  }, [records, date, type]);
 
-  /** Bu seansta daha önce kayıt alınmış mı? */
+  const savedStatuses = useMemo(() => statusesFor(subType), [statusesFor, subType]);
+
+  /** Bu gün ve seans için yoklaması tamamlanmış gruplar. */
+  const completedGroups = useMemo(() => {
+    const done = new Set<string>();
+    DERS_GROUPS.forEach(g => {
+      const inGroup = studentsOf(g);
+      if (inGroup.length === 0) return;
+      const saved = statusesFor(type === 'ETUT' ? g : subType);
+      if (inGroup.every(s => saved.has(s.id))) done.add(g);
+    });
+    return done;
+  }, [studentsOf, statusesFor, type, subType]);
+
   const hasSavedSession = useMemo(
-    () => filteredStudents.some(s => savedStatuses.has(s.id)),
+    () => filteredStudents.length > 0 && filteredStudents.every(s => savedStatuses.has(s.id)),
     [filteredStudents, savedStatuses]
   );
-
-  // Tür değişince alt tür o türün ilk seansına çekilir
-  const handleTypeChange = (type: AttendanceType) => {
-    setSelectedType(type);
-    setSelectedSubType(SUB_TYPES[type][0]);
-  };
 
   // Seans değişince kayıtlı durumları yükle; kullanıcı seçim yapmışsa dokunma
   useEffect(() => {
@@ -86,19 +100,28 @@ const AttendancePage: React.FC<AttendancePageProps> = ({ students, records, setA
     });
   };
 
+  const handleTypeChange = (next: AttendanceType) => {
+    setSession(s => ({ ...s, type: next, subType: SUB_TYPES[next][0] }));
+  };
+
+  /** Dahili derste seansı, namazda grup filtresini değiştirir. */
+  const selectGroup = (g: string) => {
+    setSession(s => (type === 'ETUT' ? { ...s, subType: g } : { ...s, group: g }));
+  };
+
   const submitAttendance = async () => {
     if (filteredStudents.length === 0) {
       showToast("Listede talebe yok.", "error");
       return;
     }
 
-    if (isFutureDate(selectedDate)) {
+    if (isFutureDate(date)) {
       const ok = await confirm({ message: "İleri bir tarihe yoklama almak üzeresiniz. Devam edilsin mi?", confirmLabel: 'Devam Et', danger: false });
       if (!ok) return;
     }
 
     // Gün içindeki tüm seanslar aynı tarih damgasını paylaşsın diye saat sabitlenir.
-    const recordTimestamp = Timestamp.fromDate(new Date(`${selectedDate}T12:00:00`));
+    const recordTimestamp = Timestamp.fromDate(new Date(`${date}T12:00:00`));
     setIsSubmitting(true);
 
     try {
@@ -106,8 +129,8 @@ const AttendancePage: React.FC<AttendancePageProps> = ({ students, records, setA
       const snapshot = await getDocs(query(
         collection(db, "attendance"),
         where("date", "==", recordTimestamp),
-        where("type", "==", selectedType),
-        where("subType", "==", selectedSubType)
+        where("type", "==", type),
+        where("subType", "==", subType)
       ));
 
       const existingDocIdByStudent = new Map<string, string>();
@@ -129,8 +152,8 @@ const AttendancePage: React.FC<AttendancePageProps> = ({ students, records, setA
           batch.set(doc(collection(db, "attendance")), {
             studentId: student.id,
             studentName: student.name,
-            type: selectedType,
-            subType: selectedSubType,
+            type,
+            subType,
             status,
             date: recordTimestamp,
             updatedAt: serverTimestamp(),
@@ -139,8 +162,22 @@ const AttendancePage: React.FC<AttendancePageProps> = ({ students, records, setA
       });
 
       await batch.commit();
-      showToast(`Yoklama kaydedildi — ${absentIds.size} yok, ${filteredStudents.length - absentIds.size} var.`, "success");
-      setActiveTab('records');
+
+      // Sıradaki gruba geç: art arda yoklama alırken her seferinde tür ve grup
+      // yeniden seçilmek zorunda kalınmasın.
+      const savedGroup = activeGroup;
+      const absentCount = absentIds.size;
+      const nextGroup = savedGroup === ALL_GROUPS
+        ? null
+        : DERS_GROUPS[DERS_GROUPS.indexOf(savedGroup) + 1] ?? null;
+
+      if (nextGroup) {
+        touchedSessionRef.current = null;
+        selectGroup(nextGroup);
+        showToast(`${savedGroup} kaydedildi (${absentCount} yok) → ${nextGroup}`, "success");
+      } else {
+        showToast(`${savedGroup === ALL_GROUPS ? 'Yoklama' : savedGroup} kaydedildi (${absentCount} yok)`, "success");
+      }
     } catch (error) {
       console.error(error);
       showToast("Kayıt sırasında hata oluştu.", "error");
@@ -150,6 +187,7 @@ const AttendancePage: React.FC<AttendancePageProps> = ({ students, records, setA
   };
 
   const absentCount = filteredStudents.filter(s => absentIds.has(s.id)).length;
+  const groupChips = type === 'ETUT' ? DERS_GROUPS : [ALL_GROUPS, ...DERS_GROUPS];
 
   return (
     <div className="flex flex-col animate-fade-in w-full h-full">
@@ -159,45 +197,60 @@ const AttendancePage: React.FC<AttendancePageProps> = ({ students, records, setA
           <input
             type="date"
             aria-label="Yoklama tarihi"
-            value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
+            value={date}
+            onChange={(e) => setSession(s => ({ ...s, date: e.target.value }))}
             className="flex-1 bg-transparent text-ink font-bold py-3 pr-4 outline-none min-w-0"
           />
         </div>
 
         <div className="flex bg-surface-soft p-1 rounded-xl gap-2 border border-line">
-          {ATTENDANCE_TYPES.map(type => (
+          {ATTENDANCE_TYPES.map(t => (
             <button
-              key={type}
-              onClick={() => handleTypeChange(type)}
-              className={`flex-1 py-2.5 text-[11px] font-extrabold rounded-lg transition-all ${selectedType === type ? 'bg-primary-600 text-white shadow-sm' : 'text-muted hover:text-ink'}`}
+              key={t}
+              onClick={() => handleTypeChange(t)}
+              className={`flex-1 py-2.5 text-[11px] font-extrabold rounded-lg transition-all ${type === t ? 'bg-primary-600 text-white shadow-sm' : 'text-muted hover:text-ink'}`}
             >
-              {TYPE_LABELS[type]}
+              {TYPE_LABELS[t]}
             </button>
           ))}
         </div>
 
-        <select
-          aria-label="Yoklama vakti"
-          value={selectedSubType}
-          onChange={(e) => setSelectedSubType(e.target.value)}
-          className="w-full p-3 bg-surface border border-line rounded-xl text-ink text-sm outline-none font-bold shadow-sm"
-        >
-          {SUB_TYPES[selectedType].map(s => <option key={s} value={s}>{s}</option>)}
-        </select>
-
-        {/* Namazda grup ayrı seçilir; dahili derste seansın kendisi gruptur. */}
-        {selectedType === 'NAMAZ' && (
+        {/* Namazda vakit; dahili derste seans zaten grup olduğu için gösterilmez. */}
+        {type === 'NAMAZ' && (
           <select
-            aria-label="Grup filtresi"
-            value={namazGroup}
-            onChange={(e) => setNamazGroup(e.target.value)}
-            className="w-full p-3 bg-surface border border-accent-300 rounded-xl text-accent-800 text-sm outline-none font-bold shadow-sm"
+            aria-label="Yoklama vakti"
+            value={subType}
+            onChange={(e) => setSession(s => ({ ...s, subType: e.target.value }))}
+            className="w-full p-3 bg-surface border border-line rounded-xl text-ink text-sm outline-none font-bold shadow-sm"
           >
-            <option value={ALL_GROUPS}>Tüm gruplar</option>
-            {DERS_GROUPS.map(g => <option key={g} value={g}>{g}</option>)}
+            {SUB_TYPES.NAMAZ.map(s => <option key={s} value={s}>{s}</option>)}
           </select>
         )}
+
+        {/* GRUP SEÇİMİ — tamamlananlar işaretli gelir */}
+        <div className="grid grid-cols-2 gap-2">
+          {groupChips.map(g => {
+            const selected = activeGroup === g;
+            const done = completedGroups.has(g);
+            return (
+              <button
+                key={g}
+                onClick={() => selectGroup(g)}
+                aria-pressed={selected}
+                className={`py-2.5 px-3 rounded-xl text-xs font-extrabold border transition-all flex items-center justify-center gap-1.5 ${
+                  selected
+                    ? 'bg-primary-600 text-white border-primary-600 shadow-sm'
+                    : done
+                      ? 'bg-primary-50 text-primary-700 border-primary-200'
+                      : 'bg-surface text-muted border-line hover:border-primary-300'
+                }`}
+              >
+                {done && <i className="fa-solid fa-check text-[10px]"></i>}
+                <span className="truncate">{g === ALL_GROUPS ? 'Tüm gruplar' : g}</span>
+              </button>
+            );
+          })}
+        </div>
 
         <div className="flex items-center justify-between px-1">
           <p className="text-[11px] text-muted font-bold">

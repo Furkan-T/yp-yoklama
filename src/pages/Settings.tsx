@@ -5,6 +5,7 @@ import { APP_VERSION, APP_NAME, STATUS_META, TYPE_LABELS } from '../constants';
 import { normalizeSubType } from '../utils/validation';
 import { useConfirm } from '../hooks/useConfirm';
 import ResetDataModal from '../components/ResetDataModal';
+import { exportStudents } from '../utils/studentImport';
 
 interface SettingsProps {
   userEmail: string | undefined;
@@ -16,12 +17,30 @@ interface SettingsProps {
 const Settings: React.FC<SettingsProps> = ({ userEmail, students, records, showToast }) => {
   const [showAbout, setShowAbout] = useState(false);
   const [showReset, setShowReset] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   const auth = getAuth();
   const { confirm, ConfirmDialog } = useConfirm();
 
   const handleLogout = async () => {
     const ok = await confirm({ message: "Çıkış yapmak istiyor musunuz?", confirmLabel: 'Çıkış Yap', danger: false });
     if (ok) await signOut(auth);
+  };
+
+  const handleExportStudents = async () => {
+    if (students.length === 0) {
+      showToast("İndirilecek talebe kaydı yok.", "error");
+      return;
+    }
+    setIsExporting(true);
+    try {
+      await exportStudents(students);
+      showToast(`${students.length} talebe indirildi.`, "success");
+    } catch (error) {
+      console.error(error);
+      showToast("Talebe listesi indirilemedi.", "error");
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   const handleExportCSV = () => {
@@ -96,9 +115,19 @@ const Settings: React.FC<SettingsProps> = ({ userEmail, students, records, showT
       </div>
 
       <div className="space-y-2">
+        <button
+          onClick={handleExportStudents}
+          disabled={isExporting}
+          className="w-full bg-surface p-5 rounded-2xl border border-line flex items-center gap-3 hover:bg-surface-soft transition-colors active:scale-95 disabled:opacity-50"
+        >
+          <i className={`fa-solid ${isExporting ? 'fa-circle-notch fa-spin' : 'fa-users'} text-primary-700`}></i>
+          <span className="text-ink font-bold">Talebe Listesi (Excel)</span>
+          <span className="ml-auto text-xs text-muted font-bold">{students.length}</span>
+        </button>
         <button onClick={handleExportCSV} className="w-full bg-surface p-5 rounded-2xl border border-line flex items-center gap-3 hover:bg-surface-soft transition-colors active:scale-95">
           <i className="fa-solid fa-file-csv text-primary-700"></i>
-          <span className="text-ink font-bold">Verileri Yedekle (Excel/CSV)</span>
+          <span className="text-ink font-bold">Yoklama Geçmişi (CSV)</span>
+          <span className="ml-auto text-xs text-muted font-bold">{records.length}</span>
         </button>
         <button onClick={() => setShowAbout(true)} className="w-full bg-surface p-5 rounded-2xl border border-line flex items-center gap-3 hover:bg-surface-soft transition-colors active:scale-95">
           <i className="fa-solid fa-circle-info text-accent-700"></i>

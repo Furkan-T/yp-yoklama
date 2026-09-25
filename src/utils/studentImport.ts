@@ -80,6 +80,8 @@ alias('department', 'Bölüm', 'Bolum', 'Bölümü', 'Bolumu');
 alias('bloodType', 'Kan Grubu', 'Kan');
 alias('grade', 'Sınıf', 'Sinif', 'Sınıfı');
 alias('country', 'Ülke', 'Ulke');
+// Dışa aktarılan listede bulunur; düzenlenip geri yüklendiğinde kaybolmasın.
+alias('isActive', 'Durum', 'Aktiflik', 'Aktif mi');
 
 /** Uzun takma adlar önce denensin ki "Veli Adı" yanlışlıkla "Ad"a düşmesin. */
 const HEADER_KEYS_BY_LENGTH = Object.keys(HEADER_ALIASES).sort((a, b) => b.length - a.length);
@@ -258,6 +260,9 @@ export const parseStudentFile = async (
         student.group = matchGroup(value);
       } else if (target === 'bloodType') {
         student.bloodType = matchOption(value, BLOOD_TYPES);
+      } else if (target === 'isActive') {
+        // "Pasif" dışındaki her değer aktif sayılır
+        student.isActive = !normalizeHeader(value).startsWith('pasif');
       } else {
         (student as Record<string, unknown>)[target] = value;
       }
@@ -334,6 +339,42 @@ export const downloadTemplate = async (): Promise<void> => {
   XLSX.utils.book_append_sheet(book, reference, 'Değerler');
 
   XLSX.writeFile(book, 'Talebe_Sablonu.xlsx');
+};
+
+/**
+ * Talebe listesini Excel dosyası olarak indirir. Sütunlar şablonla aynıdır,
+ * yani indirilen dosya düzenlenip yeniden içe aktarılabilir.
+ * @param students - dışa aktarılacak talebeler
+ */
+export const exportStudents = async (students: Student[]): Promise<void> => {
+  const XLSX = await import('xlsx');
+
+  const rows = students.map(s => [
+    s.firstName ?? '',
+    s.lastName ?? '',
+    s.group ?? '',
+    s.supervisors?.[0] ?? '',
+    s.supervisors?.[1] ?? '',
+    s.phone ?? '',
+    s.parentName ?? '',
+    s.parentPhone ?? '',
+    s.faculty ?? '',
+    s.department ?? '',
+    s.bloodType ?? '',
+    s.grade ?? '',
+    s.country ?? '',
+    s.isActive === false ? 'Pasif' : 'Aktif',
+  ]);
+
+  const sheet = XLSX.utils.aoa_to_sheet([[...IMPORT_COLUMNS, 'Durum'], ...rows]);
+  sheet['!cols'] = [...IMPORT_COLUMNS, 'Durum'].map(header => ({ wch: Math.max(header.length + 4, 14) }));
+  sheet['!freeze'] = { xSplit: '0', ySplit: '1' };
+
+  const book = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(book, sheet, 'Talebeler');
+
+  const stamp = new Date().toLocaleDateString('tr-TR').replace(/\./g, '-');
+  XLSX.writeFile(book, `Talebe_Listesi_${stamp}.xlsx`);
 };
 
 /** Önizleme başlığı için kısa özet. */
