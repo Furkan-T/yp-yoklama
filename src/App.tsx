@@ -176,7 +176,7 @@ const App: React.FC = () => {
           {activeTab === 'attendance' && <AttendancePage students={students} records={records} setActiveTab={setActiveTab} showToast={showToast} />}
           {activeTab === 'students' && <Students students={students} loading={studentLoading} showToast={showToast} />}
           {activeTab === 'records' && <Records records={records} loading={loading} showToast={showToast} />}
-          {activeTab === 'settings' && <Settings userEmail={user.email || ''} records={records} showToast={showToast} />}
+          {activeTab === 'settings' && <Settings userEmail={user.email || ''} students={students} records={records} showToast={showToast} />}
         </main>
 
         <BottomNav activeTab={activeTab} setActiveTab={setActiveTab} />

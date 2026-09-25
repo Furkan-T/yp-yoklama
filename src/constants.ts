@@ -1,7 +1,7 @@
 import type { AttendanceType, AttendanceStatus } from './types';
 
 // Uygulama künyesi
-export const APP_VERSION = 'v2.1';
+export const APP_VERSION = 'v2.2';
 export const APP_NAME = 'Yoklama Takip Sistemi';
 
 // Doğrulama desenleri

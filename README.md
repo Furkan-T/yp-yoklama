@@ -65,6 +65,7 @@ flowchart TB
 |---|---|
 | **Tüm dinleyiciler `App.tsx`'te, sayfalarda değil** | Beş ekran aynı iki koleksiyonu okur. Sayfa başına abonelik, aynı veriyi tekrar tekrar okumak ve ekranların birbirinden farklı durum göstermesi demektir. Tek abonelik kümesiyle her ekran aynı anlık görüntüden render edilir. |
 | **Yoklama kaydı için tek `writeBatch`** | Talebe başına okuma + yazma yapmak 30 kişilik bir seansta 60 tur demek olurdu ve yarısı başarısız olabilirdi. Tek sorgu mevcut kayıtları yükler, tek batch tüm değişiklikleri yazar: 2 tur ve ya hepsi ya hiçbiri. |
+| **Sıfırlama da arşivler** | "Tüm Verileri Sıfırla" tek dokunuşla bütün talebeleri ve yoklamaları kapsıyor; kalıcı silme olsaydı yanlış basış geri dönüşsüz olurdu. Aynı `isDeleted` bayrağını kullanır, onay için kullanıcıya bir kelime yazdırır ve `scripts/silinenleri-geri-al.mjs` ile geri alınabilir. Bu düğmenin kalıcı olup olmayacağı ayrıca değerlendirilecek; Ayarlar'daki "Tehlikeli Bölge" bloğu ile bileşen importu silinerek kaldırılabilir. |
 | **`deleteDoc` yerine yumuşak silme** | Silmeler toplu yapılır; "tümünü sil" yanlışlıkla bir günün tamamını yok edebilir. Yazmalar `isDeleted` bayrağı koyar, dinleyiciler bunları eler — görünüş aynı, ama geri alınabilir. |
 | **Yoklamada yalnızca yok işaretlenir** | Bir seansta talebelerin ezici çoğunluğu mevcut oluyor; herkese tek tek durum seçtirmek gereksiz dokunuş demekti. Artık yalnızca gelmeyenler işaretleniyor, kaydederken listedeki herkese kayıt yazılıyor: işaretliler YOK, kalanlar VAR. Kayıt yalnızca ekranda listelenen gruba yazılır, diğer grupların aynı seanstaki kayıtlarına dokunulmaz. |
 | **Ayrılmış talebeler içe aktarılmaz** | Kurum listelerinde ayrılan talebeler satırdan silinmek yerine sınıf sütununa "ayrıldı", "mezun", "yatay geçiş" ya da "tekamül" yazılarak işaretleniyor. İçe aktarma bu satırları eler; sessizce düşürmemek için önizlemede ayrı bir sayaçla ve sebebiyle gösterilir. |
@@ -255,7 +256,7 @@ değiştirilmemiştir (bkz. `TYPE_LABELS`).
 | Yoklama | Tarih, tür ve gruba göre hızlı yoklama girişi; gelmeyenler tek dokunuşla işaretlenir |
 | Talebeler | Kayıt ekleme, düzenleme, arama, Excel'den toplu ekleme; veliye tek dokunuşla WhatsApp |
 | Geçmiş | Geçmiş kayıtları tarih ve seansa göre görüntüleme ve silme |
-| Ayarlar | CSV dışa aktarma, hesap bilgisi, çıkış |
+| Ayarlar | CSV dışa aktarma, hesap bilgisi, çıkış, tüm verileri sıfırlama |
 
 ## Güvenlik
 

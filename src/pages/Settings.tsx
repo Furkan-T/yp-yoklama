@@ -1,18 +1,21 @@
 import React, { useState } from 'react';
 import { getAuth, signOut } from "firebase/auth";
-import type { AttendanceRecord, AttendanceStatus, ShowToastFn } from '../types';
+import type { Student, AttendanceRecord, AttendanceStatus, ShowToastFn } from '../types';
 import { APP_VERSION, APP_NAME, STATUS_META, TYPE_LABELS } from '../constants';
 import { normalizeSubType } from '../utils/validation';
 import { useConfirm } from '../hooks/useConfirm';
+import ResetDataModal from '../components/ResetDataModal';
 
 interface SettingsProps {
   userEmail: string | undefined;
+  students: Student[];
   records: AttendanceRecord[];
   showToast: ShowToastFn;
 }
 
-const Settings: React.FC<SettingsProps> = ({ userEmail, records, showToast }) => {
+const Settings: React.FC<SettingsProps> = ({ userEmail, students, records, showToast }) => {
   const [showAbout, setShowAbout] = useState(false);
+  const [showReset, setShowReset] = useState(false);
   const auth = getAuth();
   const { confirm, ConfirmDialog } = useConfirm();
 
@@ -107,6 +110,24 @@ const Settings: React.FC<SettingsProps> = ({ userEmail, records, showToast }) =>
         <i className="fa-solid fa-right-from-bracket"></i>Güvenli Çıkış Yap
       </button>
 
+      {/* TEHLİKELİ BÖLGE — kalıcı olup olmayacağı ayrıca değerlendirilecek.
+          Kaldırmak için bu blok ile ResetDataModal importunu silmek yeterli. */}
+      <section className="border border-rose-200 rounded-2xl p-4 bg-rose-50/50">
+        <h2 className="text-[11px] font-extrabold uppercase tracking-widest text-rose-600 mb-1">Tehlikeli Bölge</h2>
+        <p className="text-xs text-muted leading-relaxed mb-3">
+          Tüm talebeleri ve yoklama kayıtlarını arşivler; uygulama hiç veri girilmemiş gibi görünür.
+          Listeyi Excel'den yeniden kurmak için kullanılır.
+        </p>
+        <button
+          onClick={() => setShowReset(true)}
+          className="w-full py-3.5 rounded-xl bg-surface border border-rose-300 text-rose-600 font-bold hover:bg-rose-600 hover:text-white hover:border-rose-600 transition-all active:scale-95 flex items-center justify-center gap-2"
+        >
+          <i className="fa-solid fa-trash-arrow-up"></i>
+          Tüm Verileri Sıfırla
+          <span className="font-normal opacity-70">({students.length + records.length})</span>
+        </button>
+      </section>
+
       <div className="text-center text-xs text-muted mt-4">{APP_VERSION}</div>
 
       {showAbout && (
@@ -124,6 +145,15 @@ const Settings: React.FC<SettingsProps> = ({ userEmail, records, showToast }) =>
             <button onClick={() => setShowAbout(false)} className="w-full py-3 rounded-xl bg-primary-500 text-white font-bold mt-6">Tamam</button>
           </div>
         </div>
+      )}
+
+      {showReset && (
+        <ResetDataModal
+          students={students}
+          records={records}
+          showToast={showToast}
+          onClose={() => setShowReset(false)}
+        />
       )}
 
       {ConfirmDialog}
