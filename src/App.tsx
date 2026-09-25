@@ -89,30 +89,37 @@ const App: React.FC = () => {
     const today = getLocalDateISO();
     const todayRecords = records.filter(r => timestampToDateISO(r.date) === today);
 
-    // Bugünün seanslarını grupla. `date` gün başına sabitlendiği için aynı günün
-    // seansları aynı zaman damgasını taşır; en sonuncuyu bulmak için önce
-    // kaydın yazılma anına (updatedAt), o da yoksa seansın sıra numarasına bakılır.
+    // Bugünün seanslarını grupla. Dahili ders grup grup alındığı için her grup
+    // ayrı bir subType taşır; bunları tek seans sayarız, yoksa ana ekran yalnızca
+    // en son kaydedilen grubu gösterirdi. Namazda vakit zaten tüm gruplarda ortak.
+    const sessionKey = (r: AttendanceRecord) => r.type === 'ETUT' ? 'ETUT' : `NAMAZ|${r.subType}`;
+
     const sessions = new Map<string, {
       type: AttendanceType;
-      subType: string;
+      subType: string | null;
+      groups: Set<string>;
       savedAt: number;
       orderIndex: number;
       records: AttendanceRecord[];
     }>();
 
     todayRecords.forEach(r => {
-      const key = `${r.type}|${r.subType}`;
+      const key = sessionKey(r);
       const savedAt = r.updatedAt?.seconds ?? 0;
       const existing = sessions.get(key);
       if (existing) {
         existing.savedAt = Math.max(existing.savedAt, savedAt);
+        existing.groups.add(r.subType);
         existing.records.push(r);
       } else {
         sessions.set(key, {
           type: r.type,
-          subType: r.subType,
+          subType: r.type === 'ETUT' ? null : r.subType,
+          groups: new Set([r.subType]),
           savedAt,
-          orderIndex: SUB_TYPES[r.type]?.indexOf(r.subType) ?? -1,
+          // `date` gün başına sabitlendiği için aynı günün seansları aynı zaman
+          // damgasını taşır; updatedAt yoksa vaktin sıra numarasına düşülür.
+          orderIndex: r.type === 'NAMAZ' ? SUB_TYPES.NAMAZ.indexOf(r.subType) : -1,
           records: [r],
         });
       }
@@ -125,14 +132,25 @@ const App: React.FC = () => {
     const latestAbsentees = latestSession
       ? latestSession.records
         .filter(r => r.status !== 'VAR')
-        .map(r => ({ name: r.studentName, status: r.status }))
+        .map(r => ({
+          name: r.studentName,
+          status: r.status,
+          // Dahili derste hangi gruptan olduğu görünsün
+          group: latestSession.type === 'ETUT' ? r.subType : null,
+        }))
         .sort((a, b) => a.name.localeCompare(b.name, 'tr'))
       : [];
 
     return {
       totalStudents: students.length,
       activeStudentCount,
-      latestSessionInfo: latestSession ? { type: latestSession.type, subType: latestSession.subType } : null,
+      latestSessionInfo: latestSession
+        ? {
+            type: latestSession.type,
+            subType: latestSession.subType,
+            groupCount: latestSession.groups.size,
+          }
+        : null,
       latestAbsentees,
     };
   }, [records, students]);

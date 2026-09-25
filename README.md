@@ -67,6 +67,7 @@ flowchart TB
 | **Yoklama kaydı için tek `writeBatch`** | Talebe başına okuma + yazma yapmak 30 kişilik bir seansta 60 tur demek olurdu ve yarısı başarısız olabilirdi. Tek sorgu mevcut kayıtları yükler, tek batch tüm değişiklikleri yazar: 2 tur ve ya hepsi ya hiçbiri. |
 | **Sıfırlama da arşivler** | "Tüm Verileri Sıfırla" tek dokunuşla bütün talebeleri ve yoklamaları kapsıyor; kalıcı silme olsaydı yanlış basış geri dönüşsüz olurdu. Aynı `isDeleted` bayrağını kullanır, onay için kullanıcıya bir kelime yazdırır ve `scripts/silinenleri-geri-al.mjs` ile geri alınabilir. Bu düğmenin kalıcı olup olmayacağı ayrıca değerlendirilecek; Ayarlar'daki "Tehlikeli Bölge" bloğu ile bileşen importu silinerek kaldırılabilir. |
 | **`deleteDoc` yerine yumuşak silme** | Silmeler toplu yapılır; "tümünü sil" yanlışlıkla bir günün tamamını yok edebilir. Yazmalar `isDeleted` bayrağı koyar, dinleyiciler bunları eler — görünüş aynı, ama geri alınabilir. |
+| **Ana ekranda dahili ders tek seans sayılır** | Dahili ders grup grup alındığı için her grup ayrı bir `subType` taşır. Seansları tür ve vakit ikilisiyle gruplamak, ana ekranda yalnızca en son kaydedilen grubun görünmesine yol açıyordu. Artık günün dahili ders kayıtları tek seans sayılıp birleştiriliyor, devamsızın yanında grubu yazıyor. Namazda vakit tüm gruplarda ortak olduğu için orada değişiklik yok. |
 | **Kaydedince ekranda kalıp sıradaki gruba geçilir** | Yoklama grup grup alınıyor: kaydettikten sonra Geçmiş'e yönlendirmek, kullanıcıyı her seferinde sekmeye dönüp tür ve grubu yeniden seçmeye zorluyordu. Artık ekranda kalınır ve bir sonraki gruba geçilir; seçimler App'te tutulduğu için sekme değişse de kaybolmaz. Grup düğmeleri o gün tamamlananları işaretli gösterir. |
 | **Yoklamada yalnızca yok işaretlenir** | Bir seansta talebelerin ezici çoğunluğu mevcut oluyor; herkese tek tek durum seçtirmek gereksiz dokunuş demekti. Artık yalnızca gelmeyenler işaretleniyor, kaydederken listedeki herkese kayıt yazılıyor: işaretliler YOK, kalanlar VAR. Kayıt yalnızca ekranda listelenen gruba yazılır, diğer grupların aynı seanstaki kayıtlarına dokunulmaz. |
 | **Ayrılmış talebeler içe aktarılmaz** | Kurum listelerinde ayrılan talebeler satırdan silinmek yerine sınıf sütununa "ayrıldı", "mezun", "yatay geçiş" ya da "tekamül" yazılarak işaretleniyor. İçe aktarma bu satırları eler; sessizce düşürmemek için önizlemede ayrı bir sayaçla ve sebebiyle gösterilir. |
@@ -253,7 +254,7 @@ değiştirilmemiştir (bkz. `TYPE_LABELS`).
 
 | Ekran | Amaç |
 |-------|------|
-| Ana Ekran | Toplam ve aktif talebe sayısı; günün son seansında devamsız, geç veya izinli olanlar |
+| Ana Ekran | Toplam ve aktif talebe sayısı; günün son seansındaki devamsızlar (dahili derste tüm gruplar birlikte) |
 | Yoklama | Tarih, tür ve gruba göre hızlı yoklama girişi; gelmeyenler tek dokunuşla işaretlenir |
 | Talebeler | Kayıt ekleme, düzenleme, arama, Excel'den toplu ekleme; veliye tek dokunuşla WhatsApp |
 | Geçmiş | Geçmiş kayıtları tarih ve seansa göre görüntüleme ve silme |

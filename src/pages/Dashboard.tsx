@@ -6,8 +6,8 @@ interface DashboardProps {
   stats: {
     totalStudents: number;
     activeStudentCount: number;
-    latestSessionInfo: { type: AttendanceType; subType: string } | null;
-    latestAbsentees: { name: string; status: AttendanceStatus }[];
+    latestSessionInfo: { type: AttendanceType; subType: string | null; groupCount: number } | null;
+    latestAbsentees: { name: string; status: AttendanceStatus; group: string | null }[];
   };
   studentLoading: boolean;
 }
@@ -42,18 +42,30 @@ const Dashboard: React.FC<DashboardProps> = ({ stats, studentLoading }) => {
 
         {stats.latestSessionInfo ? (
           <div>
-            <div className="flex items-center gap-2 mb-4">
+            <div className="flex items-center gap-2 mb-4 flex-wrap">
               <span className="bg-primary-50 text-primary-700 px-3 py-1.5 rounded-lg text-xs font-bold border border-primary-200">
-                {TYPE_LABELS[stats.latestSessionInfo.type]} — {stats.latestSessionInfo.subType}
+                {TYPE_LABELS[stats.latestSessionInfo.type]}
+                {stats.latestSessionInfo.subType && ` — ${stats.latestSessionInfo.subType}`}
               </span>
+              {/* Dahili derste gruplar tek seans sayıldığı için kaç grubun
+                  alındığı ayrıca belirtilir. */}
+              {stats.latestSessionInfo.type === 'ETUT' && (
+                <span className="bg-surface-soft text-muted px-3 py-1.5 rounded-lg text-xs font-bold border border-line">
+                  {stats.latestSessionInfo.groupCount} grup
+                </span>
+              )}
             </div>
 
             {stats.latestAbsentees.length > 0 ? (
               <ul className="space-y-2">
                 {stats.latestAbsentees.map((student, idx) => (
-                  <li key={idx} className="flex justify-between items-center bg-canvas p-3.5 rounded-xl border border-line">
-                    <span className="font-bold text-sm text-ink">{student.name}</span>
-                    <span className={`text-[10px] font-extrabold px-2.5 py-1 rounded-md border ${STATUS_META[student.status].badge}`}>
+                  <li key={idx} className="flex justify-between items-center gap-3 bg-canvas p-3.5 rounded-xl border border-line">
+                    <div className="min-w-0">
+                      <span className="font-bold text-sm text-ink block truncate">{student.name}</span>
+                      {/* Dahili derste devamsızın hangi gruptan olduğu görünsün */}
+                      {student.group && <span className="text-[10px] text-muted">{student.group}</span>}
+                    </div>
+                    <span className={`text-[10px] font-extrabold px-2.5 py-1 rounded-md border flex-shrink-0 ${STATUS_META[student.status].badge}`}>
                       {STATUS_META[student.status].label}
                     </span>
                   </li>
